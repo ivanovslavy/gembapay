@@ -1,0 +1,72 @@
+{
+  "name": "gembapay",
+  "version": "1.0.0",
+  "description": "GembaPay — Unified payment gateway for crypto (ETH, BNB, POL, USDC, USDT), Stripe, and PayPal. Non-custodial cryptocurrency payments via smart contracts with fiat checkout support.",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "files": [
+    "src/",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node test/test.js",
+    "lint": "eslint src/"
+  },
+  "keywords": [
+    "payments",
+    "payment-gateway",
+    "crypto",
+    "crypto-payments",
+    "cryptocurrency",
+    "bitcoin",
+    "ethereum",
+    "eth",
+    "bnb",
+    "polygon",
+    "matic",
+    "usdc",
+    "usdt",
+    "stablecoin",
+    "stripe",
+    "paypal",
+    "fiat-payments",
+    "non-custodial",
+    "web3",
+    "blockchain",
+    "smart-contract",
+    "defi",
+    "payment-processing",
+    "checkout",
+    "ecommerce",
+    "gateway",
+    "protocol",
+    "crypto-protocol",
+    "merchant",
+    "accept-crypto",
+    "accept-payments",
+    "unified-checkout",
+    "multi-chain",
+    "apple-pay",
+    "google-pay"
+  ],
+  "author": {
+    "name": "GEMBA EOOD",
+    "email": "contacts@gembapay.com",
+    "url": "https://gembapay.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ivanovslavy/gembapay"
+  },
+  "homepage": "https://gembapay.com",
+  "bugs": {
+    "url": "https://github.com/ivanovslavy/gembapay/issues",
+    "email": "contacts@gembapay.com"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {}
+}

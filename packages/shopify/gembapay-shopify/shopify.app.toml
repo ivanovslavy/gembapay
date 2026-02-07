@@ -1,0 +1,24 @@
+name = "GembaPay"
+client_id = "YOUR_SHOPIFY_CLIENT_ID"
+application_url = "https://gembapay-shopify.fly.dev"
+embedded = true
+
+[access_scopes]
+scopes = "read_orders,write_orders,read_products,write_payment_gateways"
+
+[auth]
+redirect_urls = [
+  "https://gembapay-shopify.fly.dev/auth/callback",
+  "https://gembapay-shopify.fly.dev/auth/shopify/callback",
+  "https://gembapay-shopify.fly.dev/api/auth/callback"
+]
+
+[webhooks]
+api_version = "2025-01"
+
+[pos]
+embedded = false
+
+[build]
+automatically_update_urls_on_dev = true
+dev_store_url = "your-dev-store.myshopify.com"

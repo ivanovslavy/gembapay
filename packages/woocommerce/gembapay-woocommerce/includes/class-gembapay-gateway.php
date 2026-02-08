@@ -97,8 +97,8 @@ class GembaPay_Gateway extends WC_Payment_Gateway {
             'webhook_url' => array(
                 'title'       => __('Webhook URL', 'gembapay-for-woocommerce'),
                 'type'        => 'title',
-                    /* translators: %s: webhook URL */
                 'description' => sprintf(
+                    /* translators: %s: webhook URL */
                     __('Add this URL to your GembaPay merchant dashboard: %s', 'gembapay-for-woocommerce'),
                     '<br><code>' . esc_url(home_url('/wc-api/gembapay_webhook/')) . '</code>'
                 ),
@@ -113,8 +113,8 @@ class GembaPay_Gateway extends WC_Payment_Gateway {
                 'type'        => 'checkbox',
                 'label'       => __('Enable logging', 'gembapay-for-woocommerce'),
                 'default'     => 'no',
-                    /* translators: %s: log file path */
                 'description' => sprintf(
+                    /* translators: %s: log file path */
                     __('Log GembaPay events inside %s', 'gembapay-for-woocommerce'),
                     '<code>' . WC_Log_Handler_File::get_log_file_path('gembapay') . '</code>'
                 ),
@@ -164,9 +164,12 @@ class GembaPay_Gateway extends WC_Payment_Gateway {
         $response = $this->api->create_payment(
             $gembapay_order_id,
             $order->get_total(),
-            /* translators: %s: order number */
             $order->get_currency(),
-            sprintf(__('Order #%s', 'gembapay-for-woocommerce'), $order->get_order_number())
+            sprintf(
+                /* translators: %s: order number */
+                __('Order #%s', 'gembapay-for-woocommerce'),
+                $order->get_order_number()
+            )
         );
 
         if (is_wp_error($response)) {

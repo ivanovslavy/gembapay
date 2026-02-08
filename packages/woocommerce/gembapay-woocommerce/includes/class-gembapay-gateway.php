@@ -26,8 +26,8 @@ class GembaPay_Gateway extends WC_Payment_Gateway {
         $this->id                 = 'gembapay';
         $this->icon               = GEMBAPAY_PLUGIN_URL . 'assets/images/gembapay-logo.png';
         $this->has_fields         = false;
-        $this->method_title       = __('GembaPay', 'gembapay-woocommerce');
-        $this->method_description = __('Accept Crypto, Credit Cards, and PayPal payments with GembaPay unified checkout.', 'gembapay-woocommerce');
+        $this->method_title       = __('GembaPay', 'gembapay-for-woocommerce');
+        $this->method_description = __('Accept Crypto, Credit Cards, and PayPal payments with GembaPay unified checkout.', 'gembapay-for-woocommerce');
         $this->supports           = array(
             'products',
             'refunds',
@@ -61,59 +61,61 @@ class GembaPay_Gateway extends WC_Payment_Gateway {
     public function init_form_fields() {
         $this->form_fields = array(
             'enabled' => array(
-                'title'   => __('Enable/Disable', 'gembapay-woocommerce'),
+                'title'   => __('Enable/Disable', 'gembapay-for-woocommerce'),
                 'type'    => 'checkbox',
-                'label'   => __('Enable GembaPay', 'gembapay-woocommerce'),
+                'label'   => __('Enable GembaPay', 'gembapay-for-woocommerce'),
                 'default' => 'no',
             ),
             'title' => array(
-                'title'       => __('Title', 'gembapay-woocommerce'),
+                'title'       => __('Title', 'gembapay-for-woocommerce'),
                 'type'        => 'text',
-                'description' => __('Payment method title shown to customers.', 'gembapay-woocommerce'),
-                'default'     => __('Crypto, Card & PayPal', 'gembapay-woocommerce'),
+                'description' => __('Payment method title shown to customers.', 'gembapay-for-woocommerce'),
+                'default'     => __('Crypto, Card & PayPal', 'gembapay-for-woocommerce'),
                 'desc_tip'    => true,
             ),
             'description' => array(
-                'title'       => __('Description', 'gembapay-woocommerce'),
+                'title'       => __('Description', 'gembapay-for-woocommerce'),
                 'type'        => 'textarea',
-                'description' => __('Payment method description shown to customers.', 'gembapay-woocommerce'),
-                'default'     => __('Pay securely with cryptocurrency, credit card, or PayPal.', 'gembapay-woocommerce'),
+                'description' => __('Payment method description shown to customers.', 'gembapay-for-woocommerce'),
+                'default'     => __('Pay securely with cryptocurrency, credit card, or PayPal.', 'gembapay-for-woocommerce'),
                 'desc_tip'    => true,
             ),
             'api_key' => array(
-                'title'       => __('API Key', 'gembapay-woocommerce'),
+                'title'       => __('API Key', 'gembapay-for-woocommerce'),
                 'type'        => 'password',
-                'description' => __('Your GembaPay API key from the merchant dashboard.', 'gembapay-woocommerce'),
+                'description' => __('Your GembaPay API key from the merchant dashboard.', 'gembapay-for-woocommerce'),
                 'default'     => '',
                 'desc_tip'    => true,
             ),
             'webhook_secret' => array(
-                'title'       => __('Webhook Secret', 'gembapay-woocommerce'),
+                'title'       => __('Webhook Secret', 'gembapay-for-woocommerce'),
                 'type'        => 'password',
-                'description' => __('Your webhook secret for verifying payment notifications.', 'gembapay-woocommerce'),
+                'description' => __('Your webhook secret for verifying payment notifications.', 'gembapay-for-woocommerce'),
                 'default'     => '',
                 'desc_tip'    => true,
             ),
             'webhook_url' => array(
-                'title'       => __('Webhook URL', 'gembapay-woocommerce'),
+                'title'       => __('Webhook URL', 'gembapay-for-woocommerce'),
                 'type'        => 'title',
+                    /* translators: %s: webhook URL */
                 'description' => sprintf(
-                    __('Add this URL to your GembaPay merchant dashboard: %s', 'gembapay-woocommerce'),
+                    __('Add this URL to your GembaPay merchant dashboard: %s', 'gembapay-for-woocommerce'),
                     '<br><code>' . esc_url(home_url('/wc-api/gembapay_webhook/')) . '</code>'
                 ),
             ),
             'payment_methods' => array(
-                'title'       => __('Accepted Payment Methods', 'gembapay-woocommerce'),
+                'title'       => __('Accepted Payment Methods', 'gembapay-for-woocommerce'),
                 'type'        => 'title',
-                'description' => __('GembaPay supports: Cryptocurrency (ETH, BNB, POL, USDC, USDT), Credit/Debit Cards (via Stripe), and PayPal.', 'gembapay-woocommerce'),
+                'description' => __('GembaPay supports: Cryptocurrency (ETH, BNB, POL, USDC, USDT), Credit/Debit Cards (via Stripe), and PayPal.', 'gembapay-for-woocommerce'),
             ),
             'debug' => array(
-                'title'       => __('Debug Log', 'gembapay-woocommerce'),
+                'title'       => __('Debug Log', 'gembapay-for-woocommerce'),
                 'type'        => 'checkbox',
-                'label'       => __('Enable logging', 'gembapay-woocommerce'),
+                'label'       => __('Enable logging', 'gembapay-for-woocommerce'),
                 'default'     => 'no',
+                    /* translators: %s: log file path */
                 'description' => sprintf(
-                    __('Log GembaPay events inside %s', 'gembapay-woocommerce'),
+                    __('Log GembaPay events inside %s', 'gembapay-for-woocommerce'),
                     '<code>' . WC_Log_Handler_File::get_log_file_path('gembapay') . '</code>'
                 ),
             ),
@@ -147,7 +149,7 @@ class GembaPay_Gateway extends WC_Payment_Gateway {
         $order = wc_get_order($order_id);
 
         if (!$order) {
-            wc_add_notice(__('Order not found.', 'gembapay-woocommerce'), 'error');
+            wc_add_notice(__('Order not found.', 'gembapay-for-woocommerce'), 'error');
             return array('result' => 'failure');
         }
 
@@ -162,14 +164,15 @@ class GembaPay_Gateway extends WC_Payment_Gateway {
         $response = $this->api->create_payment(
             $gembapay_order_id,
             $order->get_total(),
+            /* translators: %s: order number */
             $order->get_currency(),
-            sprintf(__('Order #%s', 'gembapay-woocommerce'), $order->get_order_number())
+            sprintf(__('Order #%s', 'gembapay-for-woocommerce'), $order->get_order_number())
         );
 
         if (is_wp_error($response)) {
             $this->log('Payment creation failed: ' . $response->get_error_message());
             wc_add_notice(
-                __('Payment error: ', 'gembapay-woocommerce') . $response->get_error_message(),
+                __('Payment error: ', 'gembapay-for-woocommerce') . $response->get_error_message(),
                 'error'
             );
             return array('result' => 'failure');
@@ -177,7 +180,7 @@ class GembaPay_Gateway extends WC_Payment_Gateway {
 
         if (empty($response['paymentUrl'])) {
             $this->log('Payment URL not received');
-            wc_add_notice(__('Payment error: Could not create payment.', 'gembapay-woocommerce'), 'error');
+            wc_add_notice(__('Payment error: Could not create payment.', 'gembapay-for-woocommerce'), 'error');
             return array('result' => 'failure');
         }
 
@@ -187,7 +190,7 @@ class GembaPay_Gateway extends WC_Payment_Gateway {
         $order->save();
 
         // Mark as pending
-        $order->update_status('pending', __('Awaiting GembaPay payment.', 'gembapay-woocommerce'));
+        $order->update_status('pending', __('Awaiting GembaPay payment.', 'gembapay-for-woocommerce'));
 
         // Empty cart
         WC()->cart->empty_cart();
@@ -214,7 +217,7 @@ class GembaPay_Gateway extends WC_Payment_Gateway {
         // For Stripe/PayPal payments, refunds go through those platforms
         return new WP_Error(
             'gembapay_refund_error',
-            __('Refunds must be processed manually through your payment provider (Stripe/PayPal) or directly to the customer for crypto payments.', 'gembapay-woocommerce')
+            __('Refunds must be processed manually through your payment provider (Stripe/PayPal) or directly to the customer for crypto payments.', 'gembapay-for-woocommerce')
         );
     }
 
@@ -235,10 +238,10 @@ class GembaPay_Gateway extends WC_Payment_Gateway {
 
         if ($tx_hash && $network) {
             $explorer_url = $this->get_explorer_url($network, $tx_hash);
-            echo '<h2>' . esc_html__('Payment Details', 'gembapay-woocommerce') . '</h2>';
-            echo '<p><strong>' . esc_html__('Network:', 'gembapay-woocommerce') . '</strong> ' . esc_html(ucfirst($network)) . '</p>';
+            echo '<h2>' . esc_html__('Payment Details', 'gembapay-for-woocommerce') . '</h2>';
+            echo '<p><strong>' . esc_html__('Network:', 'gembapay-for-woocommerce') . '</strong> ' . esc_html(ucfirst($network)) . '</p>';
             if ($explorer_url) {
-                echo '<p><strong>' . esc_html__('Transaction:', 'gembapay-woocommerce') . '</strong> ';
+                echo '<p><strong>' . esc_html__('Transaction:', 'gembapay-for-woocommerce') . '</strong> ';
                 echo '<a href="' . esc_url($explorer_url) . '" target="_blank" rel="noopener">' . esc_html(substr($tx_hash, 0, 20)) . '...</a></p>';
             }
         }
@@ -261,14 +264,14 @@ class GembaPay_Gateway extends WC_Payment_Gateway {
 
         if ($tx_hash && $network) {
             if ($plain_text) {
-                echo "\n" . esc_html__('Payment Network:', 'gembapay-woocommerce') . ' ' . esc_html(ucfirst($network)) . "\n";
-                echo esc_html__('Transaction Hash:', 'gembapay-woocommerce') . ' ' . esc_html($tx_hash) . "\n\n";
+                echo "\n" . esc_html__('Payment Network:', 'gembapay-for-woocommerce') . ' ' . esc_html(ucfirst($network)) . "\n";
+                echo esc_html__('Transaction Hash:', 'gembapay-for-woocommerce') . ' ' . esc_html($tx_hash) . "\n\n";
             } else {
                 $explorer_url = $this->get_explorer_url($network, $tx_hash);
-                echo '<h2>' . esc_html__('Payment Details', 'gembapay-woocommerce') . '</h2>';
-                echo '<p><strong>' . esc_html__('Network:', 'gembapay-woocommerce') . '</strong> ' . esc_html(ucfirst($network)) . '</p>';
+                echo '<h2>' . esc_html__('Payment Details', 'gembapay-for-woocommerce') . '</h2>';
+                echo '<p><strong>' . esc_html__('Network:', 'gembapay-for-woocommerce') . '</strong> ' . esc_html(ucfirst($network)) . '</p>';
                 if ($explorer_url) {
-                    echo '<p><strong>' . esc_html__('Transaction:', 'gembapay-woocommerce') . '</strong> ';
+                    echo '<p><strong>' . esc_html__('Transaction:', 'gembapay-for-woocommerce') . '</strong> ';
                     echo '<a href="' . esc_url($explorer_url) . '">' . esc_html(substr($tx_hash, 0, 20)) . '...</a></p>';
                 }
             }

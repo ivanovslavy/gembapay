@@ -42,7 +42,7 @@ function gembapay_check_woocommerce() {
 function gembapay_woocommerce_missing_notice() {
     ?>
     <div class="error">
-        <p><?php esc_html_e('GembaPay requires WooCommerce to be installed and active.', 'gembapay-woocommerce'); ?></p>
+        <p><?php esc_html_e('GembaPay requires WooCommerce to be installed and active.', 'gembapay-for-woocommerce'); ?></p>
     </div>
     <?php
 }
@@ -86,8 +86,8 @@ function gembapay_add_gateway($gateways) {
  */
 function gembapay_plugin_links($links) {
     $plugin_links = array(
-        '<a href="' . admin_url('admin.php?page=wc-settings&tab=checkout&section=gembapay') . '">' . __('Settings', 'gembapay-woocommerce') . '</a>',
-        '<a href="https://gembapay.com/docs" target="_blank">' . __('Docs', 'gembapay-woocommerce') . '</a>',
+        '<a href="' . admin_url('admin.php?page=wc-settings&tab=checkout&section=gembapay') . '">' . __('Settings', 'gembapay-for-woocommerce') . '</a>',
+        '<a href="https://gembapay.com/docs" target="_blank">' . __('Docs', 'gembapay-for-woocommerce') . '</a>',
     );
     return array_merge($plugin_links, $links);
 }

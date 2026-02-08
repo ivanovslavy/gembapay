@@ -8,7 +8,7 @@
  * Author URI: https://gembapay.com
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: gembapay-woocommerce
+ * Text Domain: gembapay-for-woocommerce
  * Domain Path: /languages
  * Requires at least: 5.8
  * Requires PHP: 7.4
@@ -56,7 +56,6 @@ function gembapay_init() {
     }
 
     // Load text domain
-    load_plugin_textdomain('gembapay-woocommerce', false, dirname(plugin_basename(__FILE__)) . '/languages');
 
     // Include required files
     require_once GEMBAPAY_PLUGIN_DIR . 'includes/class-gembapay-api.php';

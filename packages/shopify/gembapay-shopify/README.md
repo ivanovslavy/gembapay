@@ -44,7 +44,7 @@ npm run dev
 ## Configuration
 
 1. Open the GembaPay app in your Shopify admin
-2. Enter your **API Key** from [Merchant Dashboard](https://merchant.gembapay.com)
+2. Enter your **API Key** from [Merchant Dashboard](https://merchant-dashboard.gembapay.com)
 3. Enter your **Webhook Secret**
 4. Check "Enable GembaPay payments"
 5. Click Save
@@ -122,9 +122,9 @@ For production hosting, deploy the app to a hosting provider (Fly.io, Railway, V
 
 ## Links
 
-- [Documentation](https://docs.gembapay.com)
-- [Merchant Dashboard](https://merchant.gembapay.com)
-- [Integration Guide](https://docs.gembapay.com/integration)
+- [Documentation](https://gembapay.com/docs)
+- [Merchant Dashboard](https://merchant-dashboard.gembapay.com)
+- [Integration Guide](https://gembapay.com/integration)
 - [GitHub](https://github.com/ivanovslavy/gembapay)
 - [npm Package](https://www.npmjs.com/package/gembapay)
 

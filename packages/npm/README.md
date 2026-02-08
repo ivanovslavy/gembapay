@@ -2,7 +2,7 @@
 
 **Unified payment gateway for crypto, cards, and PayPal.**
 
-Accept ETH, BNB, POL, USDC, USDT, credit cards (via Stripe), and PayPal through a single API. Non-custodial crypto payments — funds go directly to your wallet via smart contracts.
+Accept ETH, BNB, POL, USDC, USDT, credit cards (via Stripe), and PayPal through a single API. Non-custodial crypto payments — funds go directly to your wallet via smart contract.
 
 [![npm](https://img.shields.io/npm/v/gembapay)](https://www.npmjs.com/package/gembapay)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
@@ -134,7 +134,7 @@ const gembapay = new GembaPay({
 console.log(gembapay.isTestMode); // true
 ```
 
-Claim free test tokens at [Developer Resources](https://merchant.gembapay.com/developer-resources).
+Claim free test tokens at [Developer Resources](https://gembapay.com/developers).
 
 ## Express.js Example
 
@@ -178,7 +178,7 @@ app.listen(3000);
 
 | Option | Type | Required | Description |
 |--------|------|----------|-------------|
-| `apiKey` | `string` | ✓ | API key from [Merchant Dashboard](https://merchant.gembapay.com) |
+| `apiKey` | `string` | ✓ | API key from [Merchant Dashboard](https://merchant-dashboard.gembapay.com) |
 | `webhookSecret` | `string` | | Webhook signing secret |
 | `baseUrl` | `string` | | Custom API URL (default: `https://api.gembapay.com`) |
 | `timeout` | `number` | | Request timeout in ms (default: `30000`) |
@@ -206,11 +206,11 @@ app.listen(3000);
 
 ## Links
 
-- [Documentation](https://docs.gembapay.com)
-- [Merchant Dashboard](https://merchant.gembapay.com)
-- [Integration Guide](https://docs.gembapay.com/integration)
+- [Documentation](https://gembapay.com/docs)
+- [Merchant Dashboard](https://merchant-dashboard.gembapay.com)
+- [Integration Guide](https://gembapay.com/integration)
 - [GitHub](https://github.com/ivanovslavy/gembapay)
-- [Developer Resources](https://merchant.gembapay.com/developer-resources)
+- [Developer Resources](https://gembapay.com/developers)
 
 ## Support
 

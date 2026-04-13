@@ -6,9 +6,48 @@ This document contains the deployed contract addresses for GembaPay on all suppo
 
 ---
 
-## Mainnet Deployments
+## GembaPayEuro — EUR Stablecoin Protocol
 
-### Ethereum Mainnet (Chain ID: 1)
+> Non-custodial payment gateway for EUR-pegged stablecoins (EURC and compatible).
+> Hardcoded 1:1 EUR peg — no oracles, no native token support, direct ERC20 payments only.
+
+### Testnet Deployments
+
+| Network | Contract | Address | Verified |
+|---------|----------|---------|----------|
+| Sepolia (11155111) | GembaPayEuro | `0x2AAa51F2a8Fe3604E1248215fE576b2826Eb1031` | [Etherscan](https://sepolia.etherscan.io/address/0x2AAa51F2a8Fe3604E1248215fE576b2826Eb1031) |
+| Sepolia (11155111) | MockEURC | `0x2FCb50B9cA1cf336a287C1b9987720FC541260B4` | [Etherscan](https://sepolia.etherscan.io/address/0x2FCb50B9cA1cf336a287C1b9987720FC541260B4) |
+| Amoy (80002) | GembaPayEuro | `0xF24F3f2c9054d6aCc679805889b5119e0555F862` | [PolygonScan](https://amoy.polygonscan.com/address/0xF24F3f2c9054d6aCc679805889b5119e0555F862) |
+| Amoy (80002) | MockEURC | `0xAFc00eBB7C15176c9cE5D0e7f0917dd6A71FD109` | [PolygonScan](https://amoy.polygonscan.com/address/0xAFc00eBB7C15176c9cE5D0e7f0917dd6A71FD109) |
+| BSC Testnet (97) | GembaPayEuro | `0x13F8382187c69248f580CA547a87317DD352e467` | [BscScan](https://testnet.bscscan.com/address/0x13F8382187c69248f580CA547a87317DD352e467) |
+| BSC Testnet (97) | MockEURC | `0x01764F3A69f554778638964Fdf3c74A598f746D5` | [BscScan](https://testnet.bscscan.com/address/0x01764F3A69f554778638964Fdf3c74A598f746D5) |
+
+**Deployment Configuration:**
+- Fee Collector: `0x45c56da734b9bf124ca4447dbfaafe6cf6e29c53`
+- Fee: 50 bps (0.5%)
+- Deployed: April 2026
+
+### Mainnet Deployments
+
+> Pending — mainnet deploy scheduled after audit completion.
+
+**Planned EURC Token Addresses (Circle official):**
+
+| Network | EURC Address |
+|---------|-------------|
+| Ethereum | `0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c` |
+| Polygon | `0x08210F9170F89Ab7658F0B5E3fF39b0E03C594D4` |
+| Base | `0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42` |
+
+---
+
+## GembaPay — Multi-Currency Protocol (USD)
+
+> Non-custodial payment gateway supporting native tokens (ETH/BNB/MATIC) and USD stablecoins (USDC/USDT) with Chainlink oracle pricing.
+
+### Mainnet Deployments
+
+#### Ethereum Mainnet (Chain ID: 1)
 
 | Contract | Address | Verified |
 |----------|---------|----------|
@@ -31,7 +70,7 @@ This document contains the deployed contract addresses for GembaPay on all suppo
 
 ---
 
-### BNB Smart Chain (Chain ID: 56)
+#### BNB Smart Chain (Chain ID: 56)
 
 | Contract | Address | Verified |
 |----------|---------|----------|
@@ -54,7 +93,7 @@ This document contains the deployed contract addresses for GembaPay on all suppo
 
 ---
 
-### Polygon (Chain ID: 137)
+#### Polygon (Chain ID: 137)
 
 | Contract | Address | Verified |
 |----------|---------|----------|
@@ -79,38 +118,45 @@ This document contains the deployed contract addresses for GembaPay on all suppo
 
 ## Contract Configuration
 
-**Fee Structure:**
-- Standard Fee: 1% (100 basis points)
-- High-Risk Fee: Up to 10% (configurable per merchant)
-- VIP Fee: 0% (special merchants)
+### GembaPayEuro
 
-**Oracle Settings:**
-- Staleness Threshold: 3600 seconds (1 hour)
-- Price Deviation Threshold: 5%
+| Parameter | Value |
+|-----------|-------|
+| Standard Fee | 50 bps (0.5%) |
+| VIP Fee | 0 bps (0%) |
+| Custom Merchant Fee | Configurable per merchant |
+| Peg | 1 token = 1 EUR (hardcoded) |
+| Oracles | None |
+| Native Token | Not supported |
 
-**Quote Settings:**
-- Quote Validity: 300 seconds (5 minutes)
-- Minimum Payment: $1 USD equivalent
+### GembaPay (USD)
+
+| Parameter | Value |
+|-----------|-------|
+| Standard Fee | 100 bps (1%) |
+| High-Risk Fee | Up to 1000 bps (10%) |
+| VIP Fee | 0 bps (0%) |
+| Oracle Staleness | 3600 seconds (1 hour) |
+| Price Deviation | 5% max |
+| Quote Validity | 300 seconds (5 minutes) |
+| Minimum Payment | $1 USD equivalent |
 
 ---
 
 ## Verification
 
-All contracts are verified and open source. Source code is available in the [contracts](contracts/) directory.
-
-To verify contract source code matches deployment:
+All contracts are verified and open source. Source code available in the [contracts](contracts/) directory.
 
 ```bash
 # Clone repository
 git clone https://github.com/ivanovslavy/gembapay.git
-cd GembaPay
+cd gembapay
 
-# Install dependencies
-cd contracts
-npm install
-
-# Verify on Etherscan (example)
-npx hardhat verify --network mainnet CONTRACT_ADDRESS
+# Verify GembaPayEuro on Sepolia
+npx hardhat verify --network sepolia 0x2AAa51F2a8Fe3604E1248215fE576b2826Eb1031 \
+  "0x8eB8Bf106EbC9834a2586D04F73866C7436Ce298" \
+  "0x45c56da734b9bf124ca4447dbfaafe6cf6e29c53" \
+  50
 ```
 
 ---

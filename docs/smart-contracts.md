@@ -6,14 +6,21 @@
 
 ## Overview
 
-GembaPay uses smart contracts deployed on EVM-compatible blockchains to process cryptocurrency payments. The contracts implement a non-custodial payment model where funds transfer directly from customer to merchant.
+GembaPay operates two complementary smart contract protocols on EVM-compatible blockchains:
+
+| Protocol | Contract | Currency | Oracles | Native Token |
+|----------|----------|----------|---------|--------------|
+| GembaPay | `Gemba.sol` | USD | Chainlink | ✅ ETH/BNB/MATIC |
+| GembaPayEuro | `GembaPayEuro.sol` | EUR | None | ❌ ERC20 only |
+
+Both implement a non-custodial model — funds transfer directly from customer to merchant with no intermediary custody.
 
 ---
 
 ## Table of Contents
 
-1. [Architecture](#architecture)
-2. [PaymentGateway Contract](#paymentgateway-contract)
+1. [GembaPayEuro Contract](#gembapayeuro-contract)
+2. [PaymentGateway Contract (USD)](#paymentgateway-contract)
 3. [GiftNFT Contract](#giftnft-contract)
 4. [Oracle System](#oracle-system)
 5. [Security Features](#security-features)
@@ -21,34 +28,162 @@ GembaPay uses smart contracts deployed on EVM-compatible blockchains to process 
 
 ---
 
-## Architecture
+## GembaPayEuro Contract
+
+### Overview
+
+EUR-only stablecoin payment protocol with hardcoded 1:1 peg. Designed for the European market using Circle's EURC and compatible EUR stablecoins. No oracles, no native token support, no quote system — direct ERC20 payments only.
 
 ```
-                    Payment Flow
-                    
-Customer Wallet ──────────────────────────────────┐
-       │                                          │
-       │ 1. Approve (ERC20 only)                  │
-       ▼                                          │
-┌─────────────────┐                               │
-│ PaymentGateway  │◄─── 2. Lock Quote             │
-│    Contract     │     (native tokens)           │
-│                 │                               │
-│  ┌───────────┐  │                               │
-│  │ Chainlink │  │◄─── Get Price                 │
-│  │  Oracle   │  │                               │
-│  └───────────┘  │                               │
-│                 │                               │
-└────────┬────────┘                               │
-         │                                        │
-         │ 3. Process Payment                     │
-         │                                        │
-         ├─────────────────────────┐              │
-         │                         │              │
-         ▼                         ▼              │
-   99% to Merchant           1% to GembaPay       │
-      Wallet                   Fee Wallet         │
+                    EUR Payment Flow
+
+Customer Wallet
+       │
+       │ 1. approve(gateway, amount)
+       ▼
+┌─────────────────────┐
+│   GembaPayEuro      │
+│                     │
+│  1 EURC = 1 EUR     │◄── No oracle needed
+│  (hardcoded peg)    │
+│                     │
+└──────────┬──────────┘
+           │
+           │ 2. processPayment()
+           │
+           ├──────────────────────────┐
+           │                          │
+           ▼                          ▼
+   99.5% to Merchant           0.5% to GembaPay
+      Wallet                     Fee Wallet
 ```
+
+### Key Features
+
+- EUR-only: EURC (Circle) and any EUR-pegged ERC20
+- Hardcoded 1:1 peg — no oracle dependency
+- No native token (ETH/BNB/MATIC) support
+- No quote system — single `processPayment()` call
+- Per-merchant custom fees including 0% (VIP)
+- Multi-token: multiple EUR stablecoins supported simultaneously
+- Double-payment prevention via `usedOrders` mapping
+- Emergency pause + withdraw (owner only, paused state)
+
+### Payment Flow
+
+```
+1. Frontend calculates eurAmount (in token units, e.g. 100e6 for €100 EURC)
+2. Customer: approve(gatewayAddress, amount)
+3. Customer: processPayment(token, amount, merchant, orderId)
+4. Contract splits on-chain: merchantAmount → merchant, feeAmount → feeCollector
+```
+
+### Contract Functions
+
+**Payment**
+
+```solidity
+// Process direct EUR stablecoin payment — single entry point
+function processPayment(
+    address token,      // EURC or any supported EUR stablecoin
+    uint256 amount,     // Token amount (e.g. 100e6 for €100 with 6 decimals)
+    address merchant,   // Merchant wallet
+    string calldata orderId  // Unique order ID from merchant system
+) external returns (uint256 paymentId)
+```
+
+**View Functions**
+
+```solidity
+// Preview payment split before sending
+function previewPayment(uint256 amount, address merchant)
+    external view returns (uint256 merchantAmount, uint256 feeAmount)
+
+// Check if orderId has been paid (double-payment protection)
+function isOrderPaid(string calldata orderId) external view returns (bool)
+
+// Get effective fee for a merchant (custom or global)
+function getEffectiveFee(address merchant) public view returns (uint256)
+```
+
+**Admin Functions**
+
+```solidity
+// Token management
+function addSupportedToken(address token) external onlyOwner
+function removeSupportedToken(address token) external onlyOwner
+
+// Fee management
+function updateFeePercentage(uint256 newFee) external onlyOwner
+function updateFeeCollector(address newCollector) external onlyOwner
+function setMerchantFee(address merchant, uint256 feeBps) external onlyOwner
+function removeMerchantFee(address merchant) external onlyOwner
+
+// Emergency
+function pause() external onlyOwner
+function unpause() external onlyOwner
+function emergencyWithdraw(address token, uint256 amount, address to) external onlyOwner whenPaused
+```
+
+### Events
+
+```solidity
+event PaymentProcessed(
+    uint256 indexed paymentId,
+    address indexed merchant,
+    address indexed customer,
+    address token,
+    uint256 totalAmount,
+    uint256 merchantAmount,
+    uint256 feeAmount,
+    uint256 eurCents,       // Informational: amount in EUR cents
+    string orderId,
+    uint256 blockNumber
+);
+
+event TokenAdded(address indexed token);
+event TokenRemoved(address indexed token);
+event FeeUpdated(uint256 oldFee, uint256 newFee);
+event FeeCollectorUpdated(address indexed oldCollector, address indexed newCollector);
+event MerchantFeeSet(address indexed merchant, uint256 feeBps);
+event MerchantFeeRemoved(address indexed merchant);
+event EmergencyWithdraw(address indexed token, uint256 amount, address indexed to);
+```
+
+### Fee Structure
+
+```solidity
+// Global fee applies to all merchants without custom fee
+uint256 public feePercentage; // e.g. 50 = 0.5%
+
+// Per-merchant override — can be 0 for VIP merchants
+mapping(address => uint256) public customMerchantFee;
+mapping(address => bool)    public hasMerchantFee; // distinguishes "not set" from "set to 0"
+
+// Effective fee calculation
+function getEffectiveFee(address merchant) public view returns (uint256) {
+    if (hasMerchantFee[merchant]) return customMerchantFee[merchant];
+    return feePercentage;
+}
+```
+
+### Supported EUR Stablecoins
+
+| Token | Network | Address |
+|-------|---------|---------|
+| EURC (Circle) | Ethereum | `0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c` |
+| EURC (Circle) | Polygon | `0x08210F9170F89Ab7658F0B5E3fF39b0E03C594D4` |
+| EURC (Circle) | Base | `0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42` |
+
+### Technical Specifications
+
+| Specification | Value |
+|---------------|-------|
+| Solidity | 0.8.27 |
+| OpenZeppelin | 5.x |
+| License | MIT |
+| Oracles | None |
+| Audit | Slither 0 findings, Sepolia live tested |
 
 ---
 
@@ -58,7 +193,7 @@ Customer Wallet ─────────────────────�
 
 - Non-custodial payment processing
 - Multi-token support (native + ERC20)
-- Dual-oracle price validation
+- Dual-oracle price validation (Chainlink primary + secondary)
 - Quote-based payment locking
 - Configurable fee structure
 - Emergency pause functionality
@@ -69,31 +204,31 @@ Customer Wallet ─────────────────────�
 
 ```solidity
 // Get price quote without locking
-function getPriceQuote(address token, uint256 usdAmount) 
-    external view 
+function getPriceQuote(address token, uint256 usdAmount)
+    external view
     returns (uint256 tokenAmount, uint256 tokenPriceUSD, uint256 validityDuration)
 
 // Lock a price quote for native token payment
-function lockPriceQuote(address token, uint256 usdAmount) 
-    external 
+function lockPriceQuote(address token, uint256 usdAmount)
+    external
     returns (bytes32 quoteId, uint256 tokenAmount, uint256 validUntil)
 
 // Process payment with locked quote (native tokens)
 function processETHPaymentWithQuote(
-    bytes32 quoteId, 
-    address merchant, 
+    bytes32 quoteId,
+    address merchant,
     string calldata orderId
 ) external payable
 
 // Process payment with locked quote (ERC20 tokens)
 function processTokenPaymentWithQuote(
-    bytes32 quoteId, 
-    address merchant, 
+    bytes32 quoteId,
+    address merchant,
     string calldata orderId
 ) external
 
 // Direct stablecoin payment (no quote needed)
-function processDirectStablecoinPayment(
+function processDirectPayment(
     address token,
     uint256 amount,
     address merchant,
@@ -104,23 +239,12 @@ function processDirectStablecoinPayment(
 **Admin Functions**
 
 ```solidity
-// Update fee percentage (basis points)
 function updateFeePercentage(uint256 newFeePercentage) external onlyOwner
-
-// Update fee collector address
 function updateFeeCollector(address newFeeCollector) external onlyOwner
-
-// Add supported token with price feed
 function addSupportedToken(address token, address priceFeed) external onlyOwner
-
-// Remove supported token
 function removeSupportedToken(address token) external onlyOwner
-
-// Emergency pause
 function pause() external onlyOwner
 function unpause() external onlyOwner
-
-// Emergency withdrawal
 function emergencyWithdraw(address token, uint256 amount, address to) external onlyOwner
 ```
 
@@ -152,15 +276,6 @@ event DirectPaymentProcessed(
     string orderId,
     uint256 blockNumber
 );
-
-event QuoteLocked(
-    bytes32 indexed quoteId,
-    address indexed creator,
-    address token,
-    uint256 tokenAmount,
-    uint256 usdAmount,
-    uint256 validUntil
-);
 ```
 
 ### Fee Structure
@@ -169,11 +284,6 @@ event QuoteLocked(
 - Standard fee: 100 basis points (1%)
 - High-risk merchant fee: up to 1000 basis points (10%)
 - VIP merchant fee: 0 basis points (0%)
-
-```solidity
-uint256 merchantAmount = totalAmount * (10000 - feePercentage) / 10000;
-uint256 feeAmount = totalAmount - merchantAmount;
-```
 
 ---
 
@@ -194,187 +304,105 @@ The GiftNFT contract allows customers to claim a free commemorative NFT after co
 ### Functions
 
 ```solidity
-// Claim NFT with valid signature
-function claimNFT(
-    bytes32 paymentId,
-    address recipient,
-    bytes calldata signature
-) external
-
-// Check if payment has claimed NFT
+function claimNFT(bytes32 paymentId, address recipient, bytes calldata signature) external
 function hasClaimed(bytes32 paymentId) external view returns (bool)
-
-// Get total supply
 function totalSupply() external view returns (uint256)
-
-// Get remaining supply
 function remainingSupply() external view returns (uint256)
-```
-
-### Signature Verification
-
-```javascript
-// Backend generates signature
-const messageHash = ethers.solidityPackedKeccak256(
-  ['bytes32', 'address', 'address'],
-  [paymentId, recipient, nftContractAddress]
-);
-
-const signature = await signer.signMessage(ethers.getBytes(messageHash));
 ```
 
 ---
 
 ## Oracle System
 
+> Applies to GembaPay (USD) only. GembaPayEuro has no oracle dependency.
+
 ### Chainlink Price Feeds
 
 GembaPay uses Chainlink oracles for accurate price data:
 
-**Token Price Feeds:**
-- ETH/USD
-- BNB/USD
-- MATIC/USD
+**Token Price Feeds:** ETH/USD, BNB/USD, MATIC/USD
 
-**Forex Feeds:**
-- EUR/USD, GBP/USD, JPY/USD
-- CHF/USD, AUD/USD, CAD/USD
-- And 9 more major currencies
+**Forex Feeds:** EUR/USD, GBP/USD, JPY/USD, CHF/USD, AUD/USD, CAD/USD
 
 ### Dual Oracle Validation
 
-The contract validates prices from two sources:
-
 ```solidity
-// Get primary oracle price
-uint256 primaryPrice = getPrimaryOraclePrice(token);
-
-// Get secondary oracle price
+uint256 primaryPrice   = getPrimaryOraclePrice(token);
 uint256 secondaryPrice = getSecondaryOraclePrice(token);
-
-// Validate deviation
-uint256 deviation = calculateDeviation(primaryPrice, secondaryPrice);
+uint256 deviation      = calculateDeviation(primaryPrice, secondaryPrice);
 require(deviation <= maxPriceDeviation, "Price deviation too high");
 ```
 
 ### Staleness Protection
 
-Oracle data is validated for freshness:
-
 ```solidity
 (, int256 price, , uint256 updatedAt, ) = priceFeed.latestRoundData();
-
 require(block.timestamp - updatedAt <= stalenessThreshold, "Stale price data");
 ```
 
-**Staleness Thresholds:**
-- Mainnet: 3600 seconds (1 hour)
-- Testnet: 3600 seconds (1 hour)
+**Thresholds:** Mainnet 3600s, Testnet 86400s
 
 ---
 
 ## Security Features
 
-### Reentrancy Protection
+Both contracts implement:
 
-```solidity
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+- **ReentrancyGuard** — OpenZeppelin nonReentrant modifier
+- **Ownable** — admin functions restricted to owner
+- **Pausable** — emergency stop for all payments
+- **SafeERC20** — safe token transfer wrappers
+- **CEI Pattern** — Checks-Effects-Interactions on all state changes
+- **usedOrders mapping** — prevents double-payment per orderId
 
-contract PaymentGateway is ReentrancyGuard {
-    function processPayment(...) external nonReentrant {
-        // Payment logic
-    }
-}
-```
+GembaPay (USD) additionally implements:
 
-### Quote Creator Binding
+- **Quote creator binding** — quotes locked to creator address
+- **Quote expiration** — block-based validity window
+- **Dual oracle validation** — deviation check between primary/secondary feeds
 
-Quotes are bound to the address that created them:
+### Security Audit Results
 
-```solidity
-struct Quote {
-    address creator;
-    // ...
-}
-
-function processPayment(bytes32 quoteId) external {
-    require(quotes[quoteId].creator == msg.sender, "UnauthorizedQuoteUse");
-}
-```
-
-### Quote Expiration
-
-Quotes have a limited validity period:
-
-```solidity
-function lockPriceQuote(...) external returns (...) {
-    uint256 validUntil = block.timestamp + quoteValidityDuration;
-    // Default: 300 seconds (5 minutes)
-}
-
-function processPayment(bytes32 quoteId) external {
-    require(block.timestamp <= quotes[quoteId].validUntil, "QuoteExpired");
-}
-```
-
-### Quote Usage Tracking
-
-Each quote can only be used once:
-
-```solidity
-function processPayment(bytes32 quoteId) external {
-    require(!quotes[quoteId].isUsed, "QuoteAlreadyUsed");
-    quotes[quoteId].isUsed = true;
-}
-```
-
-### Emergency Controls
-
-```solidity
-import "@openzeppelin/contracts/utils/Pausable.sol";
-
-contract PaymentGateway is Pausable {
-    function pause() external onlyOwner {
-        _pause();
-    }
-    
-    function processPayment(...) external whenNotPaused {
-        // ...
-    }
-}
-```
+| Contract | Slither | Mythril | Live Tests |
+|----------|---------|---------|------------|
+| Gemba.sol | 0 high/medium | 0 findings | ✅ |
+| GembaPayEuro.sol | 0 findings | N/A (viaIR) | ✅ Sepolia 8/8 |
 
 ---
 
 ## Deployed Addresses
 
-See [DEPLOYMENTS.md](../DEPLOYMENTS.md) for complete contract addresses on all networks.
+See [DEPLOYMENTS.md](../DEPLOYMENTS.md) for all contract addresses.
 
 ### Quick Reference
 
-| Network | PaymentGateway | GiftNFT |
-|---------|----------------|---------|
-| Ethereum | [View](../DEPLOYMENTS.md#ethereum-mainnet) | [View](../DEPLOYMENTS.md#ethereum-mainnet) |
-| BSC | [View](../DEPLOYMENTS.md#bnb-smart-chain) | [View](../DEPLOYMENTS.md#bnb-smart-chain) |
-| Polygon | [View](../DEPLOYMENTS.md#polygon) | [View](../DEPLOYMENTS.md#polygon) |
+| Network | GembaPayEuro | GembaPay |
+|---------|-------------|---------|
+| Ethereum Mainnet | Pending | [View](../DEPLOYMENTS.md#ethereum-mainnet-chain-id-1) |
+| BSC Mainnet | Pending | [View](../DEPLOYMENTS.md#bnb-smart-chain-chain-id-56) |
+| Polygon Mainnet | Pending | [View](../DEPLOYMENTS.md#polygon-chain-id-137) |
+| Sepolia | [View](../DEPLOYMENTS.md#testnet-deployments) | [View](../DEPLOYMENTS.md#testnet-deployments) |
+| Amoy | [View](../DEPLOYMENTS.md#testnet-deployments) | — |
+| BSC Testnet | [View](../DEPLOYMENTS.md#testnet-deployments) | — |
 
 ---
 
 ## Technical Specifications
 
-| Specification | Value |
-|---------------|-------|
-| Solidity Version | 0.8.27 |
-| OpenZeppelin Version | 5.0.0 |
-| Chainlink Version | 1.2.0 |
-| License | MIT |
+| Specification | GembaPayEuro | GembaPay |
+|---------------|-------------|---------|
+| Solidity | 0.8.27 | 0.8.27 |
+| OpenZeppelin | 5.x | 5.x |
+| Chainlink | — | 1.2.0 |
+| License | MIT | MIT |
+| viaIR | Required | Required |
 
 ---
 
 ## Audit Status
 
-- Static Analysis: Slither (0 high-severity findings)
-- Security Testing: 100% pass rate
+- Static Analysis: Slither (0 findings on both contracts)
+- Live Testing: Sepolia testnet (8/8 tests passing)
 - Third-party Audit: Pending
 
 See [Security Audit](security-audit.md) for detailed results.

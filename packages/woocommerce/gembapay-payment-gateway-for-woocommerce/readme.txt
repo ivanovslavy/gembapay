@@ -1,18 +1,18 @@
-=== GembaPay for WooCommerce ===
+=== GembaPay Payment Gateway for WooCommerce ===
 Contributors: gembapay
 Tags: woocommerce, payment gateway, crypto, stripe, paypal
-Requires at least: 5.8
-Tested up to: 6.9
-Requires PHP: 7.4
+Requires at least: 6.0
+Tested up to: 6.7
+Requires PHP: 8.0
 Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Accept Crypto, Credit Cards, and PayPal payments with GembaPay - unified checkout with just 1% fees.
+Accept crypto, credit card, and PayPal payments in WooCommerce through a unified checkout experience with GembaPay.
 
 == Description ==
 
-GembaPay for WooCommerce enables you to accept cryptocurrency, credit card, and PayPal payments through a single, unified checkout experience.
+GembaPay Payment Gateway for WooCommerce enables you to accept cryptocurrency, credit card, and PayPal payments through a single, unified checkout experience.
 
 = Features =
 
@@ -56,7 +56,7 @@ GembaPay for WooCommerce enables you to accept cryptocurrency, credit card, and 
 
 1. Log in to your WordPress dashboard
 2. Go to Plugins > Add New
-3. Search for "GembaPay for WooCommerce"
+3. Search for "GembaPay Payment Gateway for WooCommerce"
 4. Click "Install Now" and then "Activate"
 
 = Manual Installation =
@@ -126,4 +126,4 @@ Yes! GembaPay uses industry-standard security practices. Crypto payments use aud
 == Upgrade Notice ==
 
 = 1.0.0 =
-Initial release of GembaPay for WooCommerce.
+Initial release of GembaPay Payment Gateway for WooCommerce.

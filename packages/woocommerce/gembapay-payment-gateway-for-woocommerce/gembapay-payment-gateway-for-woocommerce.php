@@ -1,19 +1,21 @@
 <?php
 /**
- * Plugin Name: GembaPay for WooCommerce
+ * Plugin Name: GembaPay Payment Gateway for WooCommerce
  * Plugin URI: https://gembapay.com/woocommerce
- * Description: Accept Crypto, Credit Cards, and PayPal payments with GembaPay - unified checkout with 1% fees.
+ * Description: Accept crypto, credit cards, and PayPal payments in WooCommerce with unified checkout via GembaPay. Non-custodial multi-chain gateway.
  * Version: 1.0.0
  * Author: GEMBA EOOD
  * Author URI: https://gembapay.com
- * License: GPL v2 or later
+ * License: GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: gembapay-for-woocommerce
+ * Text Domain: gembapay-payment-gateway-for-woocommerce
  * Domain Path: /languages
- * Requires at least: 5.8
- * Requires PHP: 7.4
- * WC requires at least: 6.0
- * WC tested up to: 8.5
+ * Requires Plugins: woocommerce
+ * Requires at least: 6.0
+ * Tested up to: 6.7
+ * Requires PHP: 8.0
+ * WC requires at least: 7.0
+ * WC tested up to: 9.5
  */
 
 defined('ABSPATH') || exit;
@@ -42,7 +44,7 @@ function gembapay_check_woocommerce() {
 function gembapay_woocommerce_missing_notice() {
     ?>
     <div class="error">
-        <p><?php esc_html_e('GembaPay requires WooCommerce to be installed and active.', 'gembapay-for-woocommerce'); ?></p>
+        <p><?php esc_html_e('GembaPay requires WooCommerce to be installed and active.', 'gembapay-payment-gateway-for-woocommerce'); ?></p>
     </div>
     <?php
 }
@@ -86,8 +88,8 @@ function gembapay_add_gateway($gateways) {
  */
 function gembapay_plugin_links($links) {
     $plugin_links = array(
-        '<a href="' . admin_url('admin.php?page=wc-settings&tab=checkout&section=gembapay') . '">' . __('Settings', 'gembapay-for-woocommerce') . '</a>',
-        '<a href="https://gembapay.com/docs" target="_blank">' . __('Docs', 'gembapay-for-woocommerce') . '</a>',
+        '<a href="' . admin_url('admin.php?page=wc-settings&tab=checkout&section=gembapay') . '">' . __('Settings', 'gembapay-payment-gateway-for-woocommerce') . '</a>',
+        '<a href="https://gembapay.com/docs" target="_blank">' . __('Docs', 'gembapay-payment-gateway-for-woocommerce') . '</a>',
     );
     return array_merge($plugin_links, $links);
 }

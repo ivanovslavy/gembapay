@@ -135,13 +135,13 @@ class GembaPay_Webhook {
         $order->save();
 
         // Build order note
-        $note = __('GembaPay payment completed.', 'gembapay-payment-gateway-for-woocommerce');
+        $note = __('GembaPay payment completed.', 'ivanov-payment-gateway-with-gembapay');
         
         if (isset($payment['network'])) {
             $network = ucfirst($payment['network']);
             $note .= ' ' . sprintf(
                 /* translators: %s: blockchain network name */
-                __('Network: %s.', 'gembapay-payment-gateway-for-woocommerce'),
+                __('Network: %s.', 'ivanov-payment-gateway-with-gembapay'),
                 $network
             );
         }
@@ -149,7 +149,7 @@ class GembaPay_Webhook {
         if (isset($payment['txHash'])) {
             $note .= ' ' . sprintf(
                 /* translators: %s: transaction hash */
-                __('TX: %s', 'gembapay-payment-gateway-for-woocommerce'),
+                __('TX: %s', 'ivanov-payment-gateway-with-gembapay'),
                 substr($payment['txHash'], 0, 20) . '...'
             );
         }
@@ -157,7 +157,7 @@ class GembaPay_Webhook {
         if (isset($payment['usdAmount'])) {
             $note .= ' ' . sprintf(
                 /* translators: %s: USD amount */
-                __('Amount: $%s USD', 'gembapay-payment-gateway-for-woocommerce'),
+                __('Amount: $%s USD', 'ivanov-payment-gateway-with-gembapay'),
                 $payment['usdAmount']
             );
         }
@@ -181,7 +181,7 @@ class GembaPay_Webhook {
             return;
         }
 
-        $order->update_status('failed', __('GembaPay payment failed.', 'gembapay-payment-gateway-for-woocommerce'));
+        $order->update_status('failed', __('GembaPay payment failed.', 'ivanov-payment-gateway-with-gembapay'));
         
         self::log('Order ' . $order->get_id() . ' marked as failed');
     }
@@ -198,7 +198,7 @@ class GembaPay_Webhook {
             return;
         }
 
-        $order->update_status('cancelled', __('GembaPay payment expired.', 'gembapay-payment-gateway-for-woocommerce'));
+        $order->update_status('cancelled', __('GembaPay payment expired.', 'ivanov-payment-gateway-with-gembapay'));
         
         self::log('Order ' . $order->get_id() . ' marked as cancelled (expired)');
     }

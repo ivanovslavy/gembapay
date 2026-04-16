@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: GembaPay Payment Gateway for WooCommerce
+ * Plugin Name: Ivanov Payment Gateway with GembaPay
  * Plugin URI: https://gembapay.com/woocommerce
  * Description: Accept crypto, credit cards, and PayPal payments in WooCommerce with unified checkout via GembaPay. Non-custodial multi-chain gateway.
  * Version: 1.0.0
@@ -8,11 +8,11 @@
  * Author URI: https://gembapay.com
  * License: GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: gembapay-payment-gateway-for-woocommerce
+ * Text Domain: ivanov-payment-gateway-with-gembapay
  * Domain Path: /languages
  * Requires Plugins: woocommerce
  * Requires at least: 6.0
- * Tested up to: 6.7
+ * Tested up to: 6.9
  * Requires PHP: 8.0
  * WC requires at least: 7.0
  * WC tested up to: 9.5
@@ -44,7 +44,7 @@ function gembapay_check_woocommerce() {
 function gembapay_woocommerce_missing_notice() {
     ?>
     <div class="error">
-        <p><?php esc_html_e('GembaPay requires WooCommerce to be installed and active.', 'gembapay-payment-gateway-for-woocommerce'); ?></p>
+        <p><?php esc_html_e('GembaPay requires WooCommerce to be installed and active.', 'ivanov-payment-gateway-with-gembapay'); ?></p>
     </div>
     <?php
 }
@@ -88,8 +88,8 @@ function gembapay_add_gateway($gateways) {
  */
 function gembapay_plugin_links($links) {
     $plugin_links = array(
-        '<a href="' . admin_url('admin.php?page=wc-settings&tab=checkout&section=gembapay') . '">' . __('Settings', 'gembapay-payment-gateway-for-woocommerce') . '</a>',
-        '<a href="https://gembapay.com/docs" target="_blank">' . __('Docs', 'gembapay-payment-gateway-for-woocommerce') . '</a>',
+        '<a href="' . admin_url('admin.php?page=wc-settings&tab=checkout&section=gembapay') . '">' . __('Settings', 'ivanov-payment-gateway-with-gembapay') . '</a>',
+        '<a href="https://gembapay.com/docs" target="_blank">' . __('Docs', 'ivanov-payment-gateway-with-gembapay') . '</a>',
     );
     return array_merge($plugin_links, $links);
 }

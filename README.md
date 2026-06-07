@@ -216,6 +216,7 @@ All contracts are verified on their respective block explorers.
 **API Security**
 - JWT authentication with configurable expiration
 - API key authentication for merchant requests
+- Two-factor authentication (2FA) for dashboard login — authenticator app (TOTP) or email code, with one-time backup codes
 - Password hashing (bcrypt)
 - TLS/HTTPS encryption
 - Rate limiting

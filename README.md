@@ -60,6 +60,7 @@ GembaPay is a software-as-a-service (SaaS) payment infrastructure that enables m
 - Webhook configuration
 - Multi-currency pricing (86+ fiat currencies)
 - Real-time payment notifications
+- Two-factor authentication for dashboard login (authenticator app or email code)
 
 **Security**
 - Reentrancy protection (OpenZeppelin ReentrancyGuard)

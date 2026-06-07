@@ -62,6 +62,7 @@ If you discover a security vulnerability in GembaPay, please report it responsib
 - JWT tokens for session management
 - API key authentication for merchant requests
 - Separate authentication for admin functions
+- Optional two-factor authentication (2FA) for merchant dashboard login — authenticator app (TOTP) or 6-digit email code, with one-time backup codes; TOTP secrets are encrypted at rest
 
 **Data Protection**
 - TLS/HTTPS encryption for all traffic
@@ -115,6 +116,11 @@ If you discover a security vulnerability in GembaPay, please report it responsib
 ---
 
 ## Security Best Practices for Merchants
+
+**Account Security**
+- Enable two-factor authentication (2FA) on your dashboard account — authenticator app or email code
+- Store your 2FA backup codes somewhere safe (each can be used once)
+- Use a strong, unique password for your dashboard login
 
 **API Key Management**
 - Store API keys securely (environment variables, secrets manager)

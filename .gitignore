@@ -1,3 +1,16 @@
 
 # Distributable plugin ZIPs (regenerated from source)
 packages/woocommerce/*.zip
+node_modules/
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*mnemonic*
+keyring*
+.claude/
+CLAUDE.md
+claude.md
+progress.md
+PROGRESS.md

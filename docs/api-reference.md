@@ -16,12 +16,13 @@ GembaPay API enables merchants to create payment requests and receive cryptocurr
 
 1. [Authentication](#authentication)
 2. [Payment Requests](#payment-requests)
-3. [Customer Endpoints](#customer-endpoints)
-4. [Merchant Endpoints](#merchant-endpoints)
-5. [Stripe Connect](#stripe-connect)
-6. [PayPal Integration](#paypal-integration)
-7. [Webhooks](#webhooks)
-8. [Error Handling](#error-handling)
+3. [Payment Links](#payment-links)
+4. [Customer Endpoints](#customer-endpoints)
+5. [Merchant Endpoints](#merchant-endpoints)
+6. [Stripe Connect](#stripe-connect)
+7. [PayPal Integration](#paypal-integration)
+8. [Webhooks](#webhooks)
+9. [Error Handling](#error-handling)
 
 ---
 
@@ -119,6 +120,79 @@ Creates a new payment request for a customer.
 | exchangeRate | Currency to USD exchange rate |
 | allowedMethods | Enabled payment methods for this merchant |
 | expiresAt | Payment request expiration time |
+
+---
+
+## Payment Links
+
+Payment Links let a merchant accept a payment without integrating the API — a shareable hosted page with a QR code, created and managed from the Merchant Dashboard (Dashboard → Payment Links). A link can be **single-use** (closes after one payment) or **multi-use** (reusable, e.g. for donations, with optional usage and total-amount limits). The merchant configures the amount, currency, accepted methods, expiry, which customer fields to collect (or none), Test/Live mode, and email notifications.
+
+Each link is hosted at:
+
+```
+https://payment.gembapay.com/link/<token>
+```
+
+The endpoints below are public (no authentication) and are consumed by the hosted payment page. Creating and managing links is done in the dashboard, not via the API key.
+
+### Resolve a Payment Link
+
+**Endpoint:** `GET /api/payment-links/public/:token`
+
+**Authentication:** None
+
+**Response:**
+```json
+{
+  "token": "a1b2c3d4...",
+  "merchantName": "Example Store",
+  "amount": 25.00,
+  "currency": "EUR",
+  "description": "Logo design",
+  "methods": ["crypto", "stripe", "paypal"],
+  "customerFields": {
+    "name":  { "enabled": true,  "required": true },
+    "email": { "enabled": true,  "required": true },
+    "phone": { "enabled": false, "required": false },
+    "note":  { "enabled": true,  "required": false }
+  },
+  "expiresAt": "2026-07-01T12:00:00.000Z",
+  "isTestMode": false,
+  "mode": "live",
+  "available": true,
+  "unavailableReason": null
+}
+```
+
+When `available` is `false`, `unavailableReason` explains why: `disabled`, `expired`, `used`, `max_uses`, or `max_total`.
+
+### Check Out a Payment Link
+
+Creates a payment request from the link and returns where to send the customer. Only the customer fields the merchant enabled are accepted; for a donation-style link that collects nothing, send an empty body. Required fields that are missing are rejected with `400`.
+
+**Endpoint:** `POST /api/payment-links/public/:token/checkout`
+
+**Authentication:** None
+
+**Request Body:**
+```json
+{
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "note": "Invoice #42"
+}
+```
+
+**Response:**
+```json
+{
+  "orderId": "LNK-7f3a91c2d4e8",
+  "checkoutPath": "/checkout/LNK-7f3a91c2d4e8",
+  "allowedMethods": ["crypto", "stripe", "paypal"]
+}
+```
+
+The customer is then taken to `https://payment.gembapay.com{checkoutPath}` and completes payment through the standard checkout flow (see [Customer Endpoints](#customer-endpoints)). Payment status and webhooks work exactly as for any other payment request.
 
 ---
 

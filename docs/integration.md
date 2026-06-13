@@ -70,10 +70,39 @@ In your merchant dashboard:
 
 | Method | Best For | Complexity |
 |--------|----------|------------|
+| Payment Links | Sellers with no website or store | None (no-code) |
 | REST API | Custom applications | Medium |
 | WordPress Plugin | WooCommerce stores | Low |
 | JavaScript Widget | Any website | Low |
 | Redirect | Simple integration | Very Low |
+
+---
+
+## Payment Links (No-Code)
+
+If you do not have a website or online store, you can accept payments without writing any code. Create a Payment Link in the Merchant Dashboard and share it — no API key or integration required.
+
+### Create and Share
+
+1. Go to **Dashboard → Payment Links → New**
+2. Set the amount, currency, and description
+3. Choose which payment methods to offer (from the ones you have enabled)
+4. Choose **single-use** (one-off) or **multi-use** (reusable, e.g. for donations)
+5. *(Optional)* Set an expiry, a maximum number of uses, or a total-amount limit
+6. Choose which customer details to collect — Name, Email, Phone, Note — each **Off / Optional / Required**, or none at all (e.g. for donations)
+7. Pick **Test** or **Live** mode (Live requires approved KYC)
+8. Save — you get a shareable URL and a QR code
+
+The link is hosted at `https://payment.gembapay.com/link/<token>`. Share the URL or print the QR code; the customer opens it, fills in any required details, and pays with any enabled method. Funds settle directly to you (non-custodial), and you can track status and usage in the dashboard.
+
+### Single-Use vs Multi-Use
+
+| Type | Behavior | Typical use |
+|------|----------|-------------|
+| Single-use | Closes automatically after one successful payment | One-off invoice for a product or service |
+| Multi-use | Stays open; many people can pay; optional max-uses and max-total limits | Donations, recurring collection, tip jar |
+
+Developers who want to read a link's details or start checkout programmatically can use the public [Payment Links endpoints](api-reference.md#payment-links).
 
 ---
 

@@ -49,6 +49,7 @@ GembaPay enables merchants to accept cryptocurrency, credit card (Stripe), and P
 - Direct stablecoin transfers (~60% lower gas costs)
 - Chainlink oracle price validation
 - NFT gift rewards for successful crypto payments
+- Payment Links and QR codes — no-code shareable payment pages (single-use or multi-use/donations)
 
 **Authentication Options:**
 - Email/password registration and login
@@ -1163,6 +1164,15 @@ if (existing) return res.status(200).json({ received: true }); // Already proces
 | POST | `/api/customer/payment/:orderId/claim-nft` | Claim NFT gift |
 | GET | `/api/customer/currencies` | List supported currencies |
 | GET | `/api/customer/convert` | Convert currency |
+
+### Payment Link Endpoints (Public, token-based)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/payment-links/public/:token` | Resolve a payment link |
+| POST | `/api/payment-links/public/:token/checkout` | Create a payment from the link |
+
+Payment Links are created and managed from the Merchant Dashboard (Dashboard → Payment Links).
 
 ### Stripe Endpoints (JWT Auth)
 

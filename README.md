@@ -61,6 +61,7 @@ GembaPay is a software-as-a-service (SaaS) payment infrastructure that enables m
 - Multi-currency pricing (86+ fiat currencies)
 - Real-time payment notifications
 - Two-factor authentication for dashboard login (authenticator app or email code)
+- Payment Links and QR codes — shareable, no-code payment pages (single-use or multi-use/donations)
 
 **Security**
 - Reentrancy protection (OpenZeppelin ReentrancyGuard)
@@ -171,6 +172,28 @@ All remaining world currencies including: AED, ARS, BGN, CLP, COP, CZK, DKK, EGP
 **Customer Fees:** Customers pay no GembaPay fees. All processing fees are deducted from the merchant's received amount.
 
 **High-Risk Merchants:** Custom fee rates up to 10% may apply. Contact us before registration.
+
+---
+
+## Payment Links
+
+Accept payments without a website or store. Create a Payment Link in the merchant dashboard, then share the link or its QR code — the customer opens it, pays with any method you have enabled (crypto, card, or PayPal), and funds settle directly to you (non-custodial). No code and no API key are required.
+
+**Two modes:**
+- **Single-use** — a one-off link for a specific product or service; closes automatically after it is paid.
+- **Multi-use** — a reusable link/QR that many people can pay, ideal for donations; with optional limits on the number of uses and the total amount collected.
+
+**Per-link settings:**
+- Fixed amount and currency (86+ supported)
+- Description
+- Which payment methods to offer (from the ones you have enabled)
+- Validity period (expiry)
+- Configurable customer fields — Name, Email, Phone, Note, each Off / Optional / Required, or collect nothing (e.g. for donations)
+- Test or Live mode (each uses its own API keys; Live requires approved KYC)
+- Email notifications to the customer and, optionally, to you on every payment
+- Status and usage log (see when and how many times a link was paid)
+
+Each link is hosted at `https://payment.gembapay.com/link/<token>`. See the [API Reference](docs/api-reference.md#payment-links) and the [Integration Guide](docs/integration.md#payment-links-no-code).
 
 ---
 

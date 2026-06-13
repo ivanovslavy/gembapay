@@ -80,6 +80,11 @@ If you discover a security vulnerability in GembaPay, please report it responsib
 - Replay attack prevention
 - Timeout handling
 
+**Payment Link Integrity**
+- Single-use links are atomically reserved for one payer while a checkout is in progress, so they cannot be paid twice — a concurrent checkout is rejected until the short reservation expires (it expires automatically if the payer does not complete)
+- Duplicate-payment detection: the first completed payment claims a single-use link; any later payment (e.g. a late, irreversible on-chain transaction) is flagged as a refundable overpayment, excluded from the link's usage total, and the merchant is notified
+- Multi-use links enforce their usage-count and total-amount limits
+
 ---
 
 ## Infrastructure Security
@@ -108,6 +113,9 @@ If you discover a security vulnerability in GembaPay, please report it responsib
 **Oracle Risks**
 - Price feed delays in extreme market conditions
 - Potential for oracle manipulation (mitigated by dual-oracle validation)
+
+**Payment Risks**
+- On-chain crypto payments are irreversible; a rare duplicate payment on a single-use link cannot be auto-reversed — it is detected, excluded from the link's total, and flagged to the merchant for a manual refund
 
 **Smart Contract Risks**
 - Immutable code after deployment

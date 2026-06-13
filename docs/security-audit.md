@@ -330,6 +330,7 @@ GET /api/admin → {"success":false,"error":"No authorization token provided"}
 | Attack | Method | Result |
 |--------|--------|--------|
 | Double Payment | Same orderId x2 | BLOCKED |
+| Payment-link double-pay | Two checkouts of one single-use link | BLOCKED (atomic reservation + duplicate-payment detection) |
 | Negative Amount | amount: -100 | BLOCKED |
 | Zero Amount | amount: 0 | BLOCKED |
 | Currency Confusion | Mixed currencies | BLOCKED |

@@ -156,7 +156,7 @@ GembaPay supports 86+ fiat currencies for merchant pricing. Exchange rates are p
 USD, EUR, GBP, JPY, CHF, AUD, CAD, CNY, KRW, SGD, INR, BRL, TRY, ZAR, NZD, MXN
 
 **API-Supported Currencies:**
-All remaining world currencies including: AED, ARS, BGN, CLP, COP, CZK, DKK, EGP, HKD, HUF, IDR, ILS, KES, MYR, NGN, NOK, PEN, PHP, PKR, PLN, RON, RSD, RUB, SAR, SEK, THB, TWD, UAH, VND, and 50+ more.
+All remaining world currencies including: AED, ARS, CLP, COP, CZK, DKK, EGP, HKD, HUF, IDR, ILS, KES, MYR, NGN, NOK, PEN, PHP, PKR, PLN, RON, RSD, RUB, SAR, SEK, THB, TWD, UAH, VND, and 50+ more.
 
 ---
 

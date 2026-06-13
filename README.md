@@ -184,7 +184,7 @@ Accept payments without a website or store. Create a Payment Link in the merchan
 - **Multi-use** — a reusable link/QR that many people can pay, ideal for donations; with optional limits on the number of uses and the total amount collected.
 
 **Per-link settings:**
-- Fixed amount and currency (86+ supported)
+- Amount and currency (86+ supported) — set a fixed amount, or leave it empty so the payer chooses how much to pay ("pay what you want", ideal for donations)
 - Description
 - Which payment methods to offer (from the ones you have enabled)
 - Validity period (expiry)

@@ -49,7 +49,7 @@ GembaPay enables merchants to accept cryptocurrency, credit card (Stripe), and P
 - Direct stablecoin transfers (~60% lower gas costs)
 - Chainlink oracle price validation
 - NFT gift rewards for successful crypto payments
-- Payment Links and QR codes — no-code shareable payment pages (single-use or multi-use/donations)
+- Payment Links and QR codes — no-code shareable payment pages (single-use or multi-use/donations); fixed amount or payer-chosen ("pay what you want")
 
 **Authentication Options:**
 - Email/password registration and login

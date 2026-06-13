@@ -85,7 +85,7 @@ If you do not have a website or online store, you can accept payments without wr
 ### Create and Share
 
 1. Go to **Dashboard → Payment Links → New**
-2. Set the amount, currency, and description
+2. Set the currency and description, and either set a fixed amount or **leave the amount empty so the payer chooses how much to pay** ("pay what you want", ideal for donations)
 3. Choose which payment methods to offer (from the ones you have enabled)
 4. Choose **single-use** (one-off) or **multi-use** (reusable, e.g. for donations)
 5. *(Optional)* Set an expiry, a maximum number of uses, or a total-amount limit

@@ -125,7 +125,7 @@ Creates a new payment request for a customer.
 
 ## Payment Links
 
-Payment Links let a merchant accept a payment without integrating the API — a shareable hosted page with a QR code, created and managed from the Merchant Dashboard (Dashboard → Payment Links). A link can be **single-use** (closes after one payment) or **multi-use** (reusable, e.g. for donations, with optional usage and total-amount limits). The merchant configures the amount, currency, accepted methods, expiry, which customer fields to collect (or none), Test/Live mode, and email notifications.
+Payment Links let a merchant accept a payment without integrating the API — a shareable hosted page with a QR code, created and managed from the Merchant Dashboard (Dashboard → Payment Links). A link can be **single-use** (closes after one payment) or **multi-use** (reusable, e.g. for donations, with optional usage and total-amount limits). The merchant configures the amount (a fixed amount, or an **open amount** where the payer chooses how much to pay — "pay what you want", ideal for donations), currency, accepted methods, expiry, which customer fields to collect (or none), Test/Live mode, and email notifications.
 
 Each link is hosted at:
 
@@ -147,6 +147,7 @@ The endpoints below are public (no authentication) and are consumed by the hoste
   "token": "a1b2c3d4...",
   "merchantName": "Example Store",
   "amount": 25.00,
+  "openAmount": false,
   "currency": "EUR",
   "description": "Logo design",
   "methods": ["crypto", "stripe", "paypal"],
@@ -166,9 +167,13 @@ The endpoints below are public (no authentication) and are consumed by the hoste
 
 When `available` is `false`, `unavailableReason` explains why: `disabled`, `expired`, `used`, `max_uses`, or `max_total`.
 
+When the link has an **open amount** (the payer chooses), `openAmount` is `true` and `amount` is `null`.
+
 ### Check Out a Payment Link
 
 Creates a payment request from the link and returns where to send the customer. Only the customer fields the merchant enabled are accepted; for a donation-style link that collects nothing, send an empty body. Required fields that are missing are rejected with `400`.
+
+For an **open-amount** link (`openAmount: true`), include a positive `amount` in the body — this is the amount the payer chose to pay. For a fixed-amount link, any `amount` sent is ignored.
 
 **Endpoint:** `POST /api/payment-links/public/:token/checkout`
 
@@ -180,6 +185,13 @@ Creates a payment request from the link and returns where to send the customer. 
   "name": "Jane Doe",
   "email": "jane@example.com",
   "note": "Invoice #42"
+}
+```
+
+**Open-amount link** — the payer's chosen amount is required (a donation link that collects no fields needs only this):
+```json
+{
+  "amount": 20.00
 }
 ```
 

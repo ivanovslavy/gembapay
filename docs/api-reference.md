@@ -161,11 +161,14 @@ The endpoints below are public (no authentication) and are consumed by the hoste
   "isTestMode": false,
   "mode": "live",
   "available": true,
-  "unavailableReason": null
+  "unavailableReason": null,
+  "lockedUntil": null
 }
 ```
 
-When `available` is `false`, `unavailableReason` explains why: `disabled`, `expired`, `used`, `max_uses`, or `max_total`.
+When `available` is `false`, `unavailableReason` explains why: `disabled`, `expired`, `used`, `max_uses`, `max_total`, or `locked`.
+
+`locked` is specific to **single-use** links: while one payer is checking out, the link is reserved for a few minutes so it cannot be paid twice. The response then also includes a `lockedUntil` timestamp (ISO 8601) — the link becomes available again automatically after it passes (or sooner, if that payment completes). Multi-use links are never locked.
 
 When the link has an **open amount** (the payer chooses), `openAmount` is `true` and `amount` is `null`.
 
@@ -174,6 +177,8 @@ When the link has an **open amount** (the payer chooses), `openAmount` is `true`
 Creates a payment request from the link and returns where to send the customer. Only the customer fields the merchant enabled are accepted; for a donation-style link that collects nothing, send an empty body. Required fields that are missing are rejected with `400`.
 
 For an **open-amount** link (`openAmount: true`), include a positive `amount` in the body — this is the amount the payer chose to pay. For a fixed-amount link, any `amount` sent is ignored.
+
+For a **single-use** link, this call reserves the link for the payer; a concurrent checkout while it is reserved returns `409` with `link_unavailable:locked`. The reservation expires automatically, so the link reopens if the payer does not complete.
 
 **Endpoint:** `POST /api/payment-links/public/:token/checkout`
 

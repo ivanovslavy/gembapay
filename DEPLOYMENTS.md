@@ -29,15 +29,18 @@ This document contains the deployed contract addresses for GembaPay on all suppo
 
 ### Mainnet Deployments
 
-> Pending — mainnet deploy scheduled after audit completion.
+> Live since 2026-06-27. EURC is supported on **Ethereum and Polygon only** (Circle does not issue EURC on BSC). Source-verified on Sourcify (exact match).
 
-**Planned EURC Token Addresses (Circle official):**
+| Network | Contract | Address | EURC token |
+|---------|----------|---------|------------|
+| Ethereum (1) | GembaPayEuro | `0x8E55746Bb16bb5893C3997b80fF2E6A42C1D1cAb` | `0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c` |
+| Polygon (137) | GembaPayEuro | `0x5AA9ae8CDd4277c1b60BA4cF047De5F7A7B931d9` | `0x08210F9170F89Ab7658F0B5E3fF39b0E03C594D4` |
 
-| Network | EURC Address |
-|---------|-------------|
-| Ethereum | `0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c` |
-| Polygon | `0x08210F9170F89Ab7658F0B5E3fF39b0E03C594D4` |
-| Base | `0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42` |
+- Owner: `0xc45112B334822811f4418e2f13C2C80FF790C949` · Fee Collector: `0x8eB8Bf106EbC9834a2586D04F73866C7436Ce298` · Fee: 100 bps (1%)
+- 1 token = 1 EUR (no oracle); each `orderId` single-use. EURC whitelisted on both gateways.
+- Verify: [Sourcify ETH](https://sourcify.dev/#/lookup/0x8E55746Bb16bb5893C3997b80fF2E6A42C1D1cAb) · [Sourcify POL](https://sourcify.dev/#/lookup/0x5AA9ae8CDd4277c1b60BA4cF047De5F7A7B931d9)
+
+> EURC is **not** available on BSC — Circle does not issue it there — so GembaPayEuro is intentionally not deployed on BSC.
 
 ---
 

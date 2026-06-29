@@ -23,10 +23,12 @@ GembaPay is a software-as-a-service (SaaS) payment infrastructure that enables m
 4. [Supported Tokens](#supported-tokens)
 5. [Supported Currencies](#supported-currencies)
 6. [Processing Fees](#processing-fees)
-7. [Documentation](#documentation)
-8. [Deployed Contracts](#deployed-contracts)
-9. [Security](#security)
-10. [License](#license)
+7. [Payment Links](#payment-links)
+8. [Subscriptions](#subscriptions)
+9. [Documentation](#documentation)
+10. [Deployed Contracts](#deployed-contracts)
+11. [Security](#security)
+12. [License](#license)
 
 ---
 
@@ -47,6 +49,7 @@ GembaPay is a software-as-a-service (SaaS) payment infrastructure that enables m
 - Cryptocurrency: ETH, BNB, POL, USDC, USDT
 - Fiat: Stripe (Credit/Debit Cards, Apple Pay, Google Pay)
 - Fiat: PayPal (Balance, Bank, Pay Later)
+- Recurring subscriptions: auto-billing via Stripe and PayPal native subscriptions (no crypto subscriptions)
 
 **Price Oracle Integration**
 - Chainlink price feeds for native token valuations
@@ -62,6 +65,7 @@ GembaPay is a software-as-a-service (SaaS) payment infrastructure that enables m
 - Real-time payment notifications
 - Two-factor authentication for dashboard login (authenticator app or email code)
 - Payment Links and QR codes — shareable, no-code payment pages (single-use or multi-use/donations)
+- Subscriptions — recurring billing plans with hosted subscribe links and embeddable buttons (Stripe & PayPal; 1% per cycle)
 
 **Security**
 - Reentrancy protection (OpenZeppelin ReentrancyGuard)
@@ -194,6 +198,23 @@ Accept payments without a website or store. Create a Payment Link in the merchan
 - Status and usage log (see when and how many times a link was paid)
 
 Each link is hosted at `https://payment.gembapay.com/link/<token>`. See the [API Reference](docs/api-reference.md#payment-links) and the [Integration Guide](docs/integration.md#payment-links-no-code).
+
+---
+
+## Subscriptions
+
+Charge customers automatically on a recurring schedule. Merchants create subscription **Plans** in the dashboard (name, price in EUR, billing interval, accepted methods); each plan gets a hosted subscribe link and an embeddable button to add to the merchant's own website. A customer enters their email, pays once, and an auto-recurring subscription begins.
+
+Recurring billing is powered by the **native subscription engines of Stripe and PayPal**, which auto-charge each cycle and handle retries and dunning. **Crypto subscriptions are not supported** — a wallet cannot be auto-charged without on-chain authorization for each charge.
+
+- **Plans** — name, price (EUR), billing interval (weekly / monthly / yearly), accepted methods (`stripe`, `paypal`), optional trial days. Create as many tiers as you like (e.g. Basic / Pro / Ultimate).
+- **Subscribe link + button** — each plan has a GembaPay-hosted subscribe page plus an embeddable button for the merchant's site.
+- **Upgrades / downgrades** — upgrades take effect immediately (Stripe prorates the difference for the current cycle, then bills the full new price next renewal; PayPal cancels and replaces the plan with a catch-up charge). Downgrades take effect at the next renewal, with no refund for the current period.
+- **Cancellation** — customers cancel anytime via the merchant's self-service Manage page: they enter their email, receive a 6-digit code by email, see their subscriptions with that merchant, and cancel. Cancellation is **cancel-at-period-end** (active until the paid period ends, then stops; no refund), and is **merchant-scoped** (the Manage link carries the merchant's token).
+- **Fee** — GembaPay charges **1% per billing cycle**, collected automatically via the Stripe application fee or PayPal platform fee. EUR base currency.
+- **Records & webhooks** — each paid cycle is recorded in the merchant's Transactions and fires the merchant's `payment.completed` webhook.
+
+See the [API Reference](docs/api-reference.md#subscriptions) and the [Integration Guide](docs/integration.md#subscriptions-recurring-billing).
 
 ---
 

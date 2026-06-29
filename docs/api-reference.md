@@ -17,12 +17,13 @@ GembaPay API enables merchants to create payment requests and receive cryptocurr
 1. [Authentication](#authentication)
 2. [Payment Requests](#payment-requests)
 3. [Payment Links](#payment-links)
-4. [Customer Endpoints](#customer-endpoints)
-5. [Merchant Endpoints](#merchant-endpoints)
-6. [Stripe Connect](#stripe-connect)
-7. [PayPal Integration](#paypal-integration)
-8. [Webhooks](#webhooks)
-9. [Error Handling](#error-handling)
+4. [Subscriptions](#subscriptions)
+5. [Customer Endpoints](#customer-endpoints)
+6. [Merchant Endpoints](#merchant-endpoints)
+7. [Stripe Connect](#stripe-connect)
+8. [PayPal Integration](#paypal-integration)
+9. [Webhooks](#webhooks)
+10. [Error Handling](#error-handling)
 
 ---
 
@@ -210,6 +211,313 @@ For a **single-use** link, this call reserves the link for the payer; a concurre
 ```
 
 The customer is then taken to `https://payment.gembapay.com{checkoutPath}` and completes payment through the standard checkout flow (see [Customer Endpoints](#customer-endpoints)). Payment status and webhooks work exactly as for any other payment request.
+
+---
+
+## Subscriptions
+
+Subscriptions let a merchant bill customers automatically on a recurring schedule. A merchant creates **plans** (price, billing interval, accepted methods); each plan exposes a hosted subscribe link and an embeddable button. Recurring charges are executed by the **native subscription engines of Stripe and PayPal** — crypto subscriptions are not supported.
+
+Plan management endpoints require **merchant JWT** (dashboard) authentication. The subscribe and manage flows used by the hosted pages are **public** (no authentication). Each successful billing cycle is recorded in the merchant's transactions and triggers the merchant's `payment.completed` webhook (see [Webhooks](webhooks.md#subscription-events)).
+
+### Create a Plan
+
+**Endpoint:** `POST /api/subscriptions`
+
+**Authentication:** JWT Token (merchant dashboard)
+
+**Request Body:**
+```json
+{
+  "name": "Pro",
+  "amount": 19.99,
+  "currency": "EUR",
+  "interval": "month",
+  "intervalCount": 1,
+  "description": "Pro plan — monthly",
+  "allowedMethods": ["stripe", "paypal"],
+  "trialDays": 14
+}
+```
+
+**Parameters:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| name | string | Yes | Plan name shown to customers (e.g. Basic, Pro, Ultimate) |
+| amount | number | Yes | Price per billing cycle |
+| currency | string | No | ISO 4217 currency code (base currency EUR; default EUR) |
+| interval | string | Yes | Billing interval: `week`, `month`, or `year` |
+| intervalCount | number | No | Number of intervals per cycle (default 1) |
+| description | string | No | Plan description shown on the subscribe page |
+| allowedMethods | string[] | Yes | Accepted methods: any of `stripe`, `paypal` (no crypto) |
+| trialDays | number | No | Free trial length in days |
+
+**Response:**
+```json
+{
+  "success": true,
+  "plan": {
+    "id": "sub_plan_8f2a...",
+    "name": "Pro",
+    "amount": 19.99,
+    "currency": "EUR",
+    "interval": "month",
+    "intervalCount": 1,
+    "allowedMethods": ["stripe", "paypal"],
+    "trialDays": 14,
+    "status": "active",
+    "token": "p_a1b2c3d4...",
+    "subscribeUrl": "https://payment.gembapay.com/subscribe/p_a1b2c3d4...",
+    "createdAt": "2026-06-29T10:00:00.000Z"
+  }
+}
+```
+
+### List Plans
+
+**Endpoint:** `GET /api/subscriptions`
+
+**Authentication:** JWT Token
+
+**Response:**
+```json
+{
+  "success": true,
+  "plans": [
+    { "id": "sub_plan_8f2a...", "name": "Basic", "amount": 9.99, "currency": "EUR", "interval": "month", "status": "active" },
+    { "id": "sub_plan_9g3b...", "name": "Pro", "amount": 19.99, "currency": "EUR", "interval": "month", "status": "active" }
+  ]
+}
+```
+
+### Get a Plan
+
+**Endpoint:** `GET /api/subscriptions/:id`
+
+**Authentication:** JWT Token
+
+**Response:** the plan object (same shape as in [Create a Plan](#create-a-plan)).
+
+### Update a Plan
+
+**Endpoint:** `PATCH /api/subscriptions/:id`
+
+**Authentication:** JWT Token
+
+Update a plan's status (for example, to pause new sign-ups or archive it).
+
+**Request Body:**
+```json
+{
+  "status": "paused"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| status | string | `active`, `paused`, or `archived` |
+
+**Response:**
+```json
+{
+  "success": true,
+  "plan": { "id": "sub_plan_8f2a...", "status": "paused" }
+}
+```
+
+### List Subscribers
+
+**Endpoint:** `GET /api/subscriptions/subscribers`
+
+**Authentication:** JWT Token
+
+**Response:**
+```json
+{
+  "success": true,
+  "subscribers": [
+    {
+      "id": "sub_7c1d...",
+      "planId": "sub_plan_8f2a...",
+      "planName": "Pro",
+      "email": "jane@example.com",
+      "provider": "stripe",
+      "status": "active",
+      "currentPeriodEnd": "2026-07-29T10:00:00.000Z",
+      "createdAt": "2026-06-29T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+### Subscription Metrics
+
+**Endpoint:** `GET /api/subscriptions/metrics`
+
+**Authentication:** JWT Token
+
+**Response:**
+```json
+{
+  "success": true,
+  "metrics": {
+    "mrr": 1240.50,
+    "currency": "EUR",
+    "activeSubscribers": 86,
+    "churnRate": 0.031
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| mrr | Monthly recurring revenue |
+| activeSubscribers | Count of currently active subscriptions |
+| churnRate | Cancellation rate over the trailing period |
+
+### Cancel a Subscriber (Merchant-Initiated)
+
+**Endpoint:** `POST /api/subscriptions/subscribers/:id/cancel`
+
+**Authentication:** JWT Token
+
+Cancels a subscriber's subscription at period end (the provider stops billing at the next cycle). The customer can also cancel themselves via the public manage flow below.
+
+**Response:**
+```json
+{
+  "success": true,
+  "subscriber": {
+    "id": "sub_7c1d...",
+    "status": "cancel_at_period_end",
+    "currentPeriodEnd": "2026-07-29T10:00:00.000Z"
+  }
+}
+```
+
+### Public: Resolve a Plan
+
+Used by the hosted subscribe page to render plan details. No authentication.
+
+**Endpoint:** `GET /api/subscriptions/public/plan/:token`
+
+**Response:**
+```json
+{
+  "token": "p_a1b2c3d4...",
+  "merchantName": "Example Store",
+  "name": "Pro",
+  "amount": 19.99,
+  "currency": "EUR",
+  "interval": "month",
+  "intervalCount": 1,
+  "description": "Pro plan — monthly",
+  "methods": ["stripe", "paypal"],
+  "trialDays": 14,
+  "available": true
+}
+```
+
+### Public: Subscribe
+
+Starts a subscription for a customer and returns where to redirect them to authorize and pay the first cycle (Stripe Checkout or PayPal approval). No authentication.
+
+**Endpoint:** `POST /api/subscriptions/public/plan/:token/subscribe`
+
+**Request Body:**
+```json
+{
+  "email": "jane@example.com",
+  "method": "stripe"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| email | string | Yes | Customer's email (used for billing and for the cancellation flow) |
+| method | string | Yes | `stripe` or `paypal` (must be one of the plan's allowed methods) |
+
+**Response:**
+```json
+{
+  "url": "https://checkout.stripe.com/c/pay/cs_..."
+}
+```
+
+Redirect the customer to `url`. After they authorize the recurring payment, the subscription becomes active and the provider charges each cycle automatically.
+
+### Public: Manage / Cancel
+
+Self-service cancellation for customers — no account or password. The customer verifies ownership of their email with a 6-digit code, then cancels. The flow is **merchant-scoped**: `:merchantToken` ties the request to one merchant, so the same email only ever reveals the subscriptions held with that merchant. No authentication.
+
+**Step 1 — Request a code**
+
+**Endpoint:** `POST /api/subscriptions/public/manage/:merchantToken/code`
+
+**Request Body:**
+```json
+{ "email": "jane@example.com" }
+```
+
+**Response:**
+```json
+{ "success": true, "message": "A 6-digit code has been sent to your email." }
+```
+
+**Step 2 — Verify the code and list subscriptions**
+
+**Endpoint:** `POST /api/subscriptions/public/manage/:merchantToken/verify`
+
+**Request Body:**
+```json
+{ "email": "jane@example.com", "code": "482913" }
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "subscriptions": [
+    {
+      "subscriptionId": "sub_7c1d...",
+      "planName": "Pro",
+      "amount": 19.99,
+      "currency": "EUR",
+      "interval": "month",
+      "status": "active",
+      "currentPeriodEnd": "2026-07-29T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+**Step 3 — Cancel**
+
+**Endpoint:** `POST /api/subscriptions/public/manage/:merchantToken/cancel`
+
+**Request Body:**
+```json
+{
+  "email": "jane@example.com",
+  "code": "482913",
+  "subscriptionId": "sub_7c1d..."
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "subscription": {
+    "subscriptionId": "sub_7c1d...",
+    "status": "cancel_at_period_end",
+    "currentPeriodEnd": "2026-07-29T10:00:00.000Z"
+  }
+}
+```
+
+Cancellation is **cancel-at-period-end**: the subscription stays active until `currentPeriodEnd`, then stops with no further charges. No refund is issued for the current period.
 
 ---
 

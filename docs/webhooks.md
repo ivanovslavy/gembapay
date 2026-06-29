@@ -15,10 +15,11 @@ GembaPay sends webhook notifications to your server when payment events occur. W
 1. [Configuration](#configuration)
 2. [Webhook Events](#webhook-events)
 3. [Payload Format](#payload-format)
-4. [Signature Verification](#signature-verification)
-5. [Retry Policy](#retry-policy)
-6. [Best Practices](#best-practices)
-7. [Testing](#testing)
+4. [Subscription Events](#subscription-events)
+5. [Signature Verification](#signature-verification)
+6. [Retry Policy](#retry-policy)
+7. [Best Practices](#best-practices)
+8. [Testing](#testing)
 
 ---
 
@@ -46,9 +47,11 @@ A webhook secret is automatically generated when you set your webhook URL. Use t
 
 | Event | Description |
 |-------|-------------|
-| `payment.completed` | Payment successfully processed |
+| `payment.completed` | Payment successfully processed (also fired for each paid subscription cycle) |
 | `payment.failed` | Payment failed |
 | `payment.expired` | Payment request expired |
+
+> **Subscriptions:** GembaPay does not introduce new outbound event types for subscriptions. Each successful recurring billing cycle fires a standard **`payment.completed`** webhook to your endpoint. See [Subscription Events](#subscription-events).
 
 ---
 
@@ -161,6 +164,63 @@ X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
   "timestamp": "2026-01-25T08:15:05.193Z"
 }
 ```
+
+---
+
+## Subscription Events
+
+Subscriptions are billed recurringly through the **native subscription engines of Stripe and PayPal**. GembaPay receives the provider-side subscription events, reconciles them, and notifies merchants through the **same `payment.completed` webhook** used for one-off payments — you do not need to handle a separate set of subscription event types.
+
+### Provider events GembaPay consumes (internal)
+
+GembaPay listens to and processes the following provider webhooks. Handling is **idempotent** (duplicate deliveries are de-duplicated), so a provider re-sending an event never double-records a cycle or double-fires your webhook.
+
+**Stripe:**
+
+| Stripe event | What it means |
+|--------------|---------------|
+| `customer.subscription.created` | A new subscription started |
+| `customer.subscription.updated` | Plan/quantity/status changed (e.g. upgrade, downgrade scheduled) |
+| `customer.subscription.deleted` | Subscription ended/cancelled |
+| `invoice.paid` | A billing cycle was paid → recorded + your `payment.completed` fires |
+| `invoice.payment_failed` | A cycle charge failed (Stripe retries / dunning) |
+
+**PayPal:**
+
+| PayPal event | What it means |
+|--------------|---------------|
+| `BILLING.SUBSCRIPTION.ACTIVATED` | A new subscription became active |
+| `BILLING.SUBSCRIPTION.UPDATED` | Subscription changed |
+| `BILLING.SUBSCRIPTION.CANCELLED` | Subscription cancelled |
+| `BILLING.SUBSCRIPTION.SUSPENDED` | Subscription suspended (e.g. failed payments) |
+| `PAYMENT.SALE.COMPLETED` | A billing cycle was paid → recorded + your `payment.completed` fires |
+
+> These are inbound provider events that GembaPay handles for you. As a merchant you only need to handle the **`payment.completed`** webhook you receive from GembaPay.
+
+### What your endpoint receives per cycle
+
+Each paid subscription cycle is recorded in your Transactions and delivered to your webhook as a standard `payment.completed` event. The payment method (`stripe` or `paypal`) appears in `network` / `paymentProvider`, and the subscriber's email in `customerAddress`, exactly as for a one-off Stripe/PayPal payment:
+
+```json
+{
+  "event": "payment.completed",
+  "payment": {
+    "orderId": "SUB-7c1d8e2f-0001",
+    "amount": 19.99,
+    "usdAmount": 21.73,
+    "currency": "EUR",
+    "status": "completed",
+    "txHash": "in_1Pabc123...",
+    "network": "stripe",
+    "paymentProvider": "stripe",
+    "customerAddress": "jane@example.com",
+    "tokenAmount": 19.99
+  },
+  "timestamp": "2026-06-29T10:00:05.193Z"
+}
+```
+
+> The `orderId` for a subscription cycle identifies the subscription and the billing cycle. Treat it as the idempotency key (see [Implement Idempotency](#2-implement-idempotency)) so a re-delivered webhook fulfils the cycle only once.
 
 ---
 

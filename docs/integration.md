@@ -14,10 +14,12 @@ This guide walks you through integrating GembaPay into your website or applicati
 
 1. [Getting Started](#getting-started)
 2. [Integration Methods](#integration-methods)
-3. [API Integration](#api-integration)
-4. [WordPress Integration](#wordpress-integration)
-5. [Testing](#testing)
-6. [Going Live](#going-live)
+3. [Payment Links (No-Code)](#payment-links-no-code)
+4. [Subscriptions (Recurring Billing)](#subscriptions-recurring-billing)
+5. [API Integration](#api-integration)
+6. [WordPress Integration](#wordpress-integration)
+7. [Testing](#testing)
+8. [Going Live](#going-live)
 
 ---
 
@@ -71,6 +73,7 @@ In your merchant dashboard:
 | Method | Best For | Complexity |
 |--------|----------|------------|
 | Payment Links | Sellers with no website or store | None (no-code) |
+| Subscriptions | Recurring / membership billing | None (no-code) |
 | REST API | Custom applications | Medium |
 | WordPress Plugin | WooCommerce stores | Low |
 | JavaScript Widget | Any website | Low |
@@ -103,6 +106,79 @@ The link is hosted at `https://payment.gembapay.com/link/<token>`. Share the URL
 | Multi-use | Stays open; many people can pay; optional max-uses and max-total limits | Donations, recurring collection, tip jar |
 
 Developers who want to read a link's details or start checkout programmatically can use the public [Payment Links endpoints](api-reference.md#payment-links).
+
+---
+
+## Subscriptions (Recurring Billing)
+
+Charge your customers automatically on a recurring schedule — for memberships, SaaS plans, or any service billed per period. No code is required: you create plans in the Merchant Dashboard, then share a hosted subscribe link or paste an embeddable button on your own website.
+
+Recurring billing is handled by the **native subscription engines of Stripe and PayPal**, which automatically charge each cycle and manage retries and dunning for failed payments. **Crypto subscriptions are not supported**, because a wallet cannot be auto-charged without on-chain authorization for each individual charge.
+
+### Create a Plan
+
+1. Go to **Dashboard → Subscriptions → New Plan**
+2. Set the plan **name** (e.g. Basic, Pro, Ultimate), **price** (EUR), and **billing interval** (weekly, monthly, or yearly)
+3. Choose which methods to accept — **Stripe**, **PayPal**, or both
+4. *(Optional)* Set free **trial days**
+5. Save — the plan gets a hosted **subscribe link** and an **embeddable button**
+
+Create as many tiers as you like; you can edit a plan or pause new sign-ups at any time.
+
+### Share or Embed
+
+- **Subscribe link** — share `the plan's hosted subscribe page` directly (email, chat, social).
+- **Embeddable button** — copy the button snippet from the dashboard and paste it onto your own website. Clicking it opens the GembaPay-hosted subscribe page.
+
+On the subscribe page the customer enters their email, chooses a method, and pays the first cycle. The auto-recurring subscription then begins immediately.
+
+### Subscription Lifecycle
+
+```
+Customer clicks subscribe link / button
+        │
+        ▼
+Enters email, pays first cycle (Stripe or PayPal)
+        │
+        ▼
+Subscription ACTIVE — provider auto-charges each cycle
+        │
+        ├──► each paid cycle  → recorded in Transactions + payment.completed webhook
+        │
+        ├──► upgrade  → effective immediately (proration / catch-up charge)
+        ├──► downgrade → effective at next renewal (no refund)
+        │
+        ▼
+Customer cancels via Manage page (cancel-at-period-end)
+        │
+        ▼
+Active until end of paid period, then STOPS
+```
+
+### Upgrades and Downgrades
+
+- **Upgrade** (to a higher-priced plan), mid-cycle: with **Stripe**, the prorated difference for the remainder of the current cycle is charged immediately, and the full new price applies at the next renewal. With **PayPal**, the existing subscription is cancelled and replaced by the new plan, with a catch-up charge.
+- **Downgrade** (to a lower-priced plan): takes effect at the **next renewal**. No refund is issued for the current, already-paid period.
+
+### How Customers Cancel
+
+Cancellation is **self-service** — no customer account or password. Each merchant has a **Manage page**:
+
+1. The customer opens the merchant's Manage page and enters their **email address**
+2. They receive a **6-digit code by email**
+3. They enter the code and see the subscription(s) they hold **with that merchant**
+4. They cancel
+
+Cancellation is **cancel-at-period-end**: the subscription stays active until the end of the period already paid for, then stops — **no refund** for the current period. The Manage page is **merchant-scoped**: the manage link carries the merchant's token, so the same email used at different merchants only ever shows that merchant's subscriptions. Identity is proven by the 6-digit email code.
+
+### Fees and Records
+
+- GembaPay charges **1% per billing cycle**, collected automatically as a Stripe application fee or a PayPal platform fee. EUR is the base currency.
+- Each successful billing cycle is recorded in the merchant's **Transactions** and fires the merchant's **`payment.completed`** webhook (see [Webhooks](webhooks.md#subscription-events)).
+
+### For Developers
+
+Plans are created and managed with the merchant API (dashboard JWT); the hosted subscribe and manage pages use public endpoints. See the [Subscriptions API endpoints](api-reference.md#subscriptions).
 
 ---
 

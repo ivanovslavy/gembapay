@@ -26,7 +26,9 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
   [x] **H4 unit-file perms** (all `gembapay-*.service` → root:root 644; daemon-reload; services stayed active) · [ ] H5 deps ·
   [ ] H6 secret over-fetch · [x] **H7 raw-SQL admin** (schema route SQLi → parameterized `$queryRaw`; `/db/query`
   denylist still needs a read-only DB role — noted) · [x] **H8 cmd-injection** (`generate-monthly` `month` → strict
-  `YYYY-MM` validation) · [ ] H9 amount-verify · [ ] H10 RPC-verify ·
+  `YYYY-MM` validation) · [x] **H9 amount-verify** (main quote/USD handler: paid < requested×0.90 → `underpaid`,
+  not completed, no webhook; **owner-tested: normal crypto payment completes + webhook arrives**. Euro/direct
+  handlers not yet covered — different currency fields) · [ ] H10 RPC-verify ·
   [ ] H11 hot-wallet keys · [ ] H12 API-key domain binding (LAST — merchant-breaking) ·
   [~] **H13 refund state** — the exploitable **double-refund is CLOSED** (already-refunded `409` guard added with
   C1/C2). Fee-reversal (`refund_application_fee`) + partial-refund status **DEFERRED**: they risk breaking live

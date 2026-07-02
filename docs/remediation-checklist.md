@@ -22,7 +22,9 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
   all pollers active, no crash. 🟡 **BEHAVIOR-CHANGE** — see migration notes.
 
 ## 🟠 HIGH
-- [ ] H1 email-2FA bypass · [ ] H2 CF origin-lock · [x] **H3 root priv-esc** (rpc-telemetry script → root:root 644) ·
+- [x] **H1 email-2FA bypass** (`hashCode` → keyed HMAC(code, JWT_SECRET) so the codeHash in the challenge JWT is
+  not reversible offline; **owner-tested: login works**) · [ ] H2 CF origin-lock (deferred — whole-site outage risk;
+  do in a maintenance window) · [x] **H3 root priv-esc** (rpc-telemetry script → root:root 644) ·
   [x] **H4 unit-file perms** (all `gembapay-*.service` → root:root 644; daemon-reload; services stayed active) · [ ] H5 deps ·
   [ ] H6 secret over-fetch · [x] **H7 raw-SQL admin** (schema route SQLi → parameterized `$queryRaw`; `/db/query`
   denylist still needs a read-only DB role — noted) · [x] **H8 cmd-injection** (`generate-monthly` `month` → strict

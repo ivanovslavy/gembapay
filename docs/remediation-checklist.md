@@ -61,7 +61,9 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
 **Deferred MEDIUM that touch payments/login/dashboard (do together, per owner):** ~~payment/fix~~,
 subscription-cycle `@unique` (billing + migration), ~~fee-hardcoded-1%~~ (self-verified NOT a bug: `getMerchantFeeRate` = customFeeRate > high-risk(10%) > env-configurable
 default; Stripe+PayPal both use it; crypto fee is on-chain) + VAT + invoice-race (invoicing/amounts),
-`Payment.isTestMode` column (migration), token-decimals (crypto crediting), real CSP (dashboard rendering),
+~~`Payment.isTestMode` column~~ **(DONE — DB backed up first; Prisma migration ADD COLUMN + backfill from linked
+request [test=359/live=89]; all 12 `Payment.create` sites now set it from the right source; migrate status clean; 3
+services restarted healthy)**, ~~token-decimals~~ (not-a-bug), real CSP (dashboard rendering),
 clickjacking-scope (Shopify embed), orderId→token (BREAKING checkout), 0.0.0.0→localhost (bind/restart).
 
 ## ⚪ LOW / latent

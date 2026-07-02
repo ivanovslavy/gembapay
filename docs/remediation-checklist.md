@@ -27,7 +27,10 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
   [ ] H6 secret over-fetch · [x] **H7 raw-SQL admin** (schema route SQLi → parameterized `$queryRaw`; `/db/query`
   denylist still needs a read-only DB role — noted) · [x] **H8 cmd-injection** (`generate-monthly` `month` → strict
   `YYYY-MM` validation) · [ ] H9 amount-verify · [ ] H10 RPC-verify ·
-  [ ] H11 hot-wallet keys · [ ] H12 API-key domain binding · [ ] H13 refund state (double/partial/fee-reversal).
+  [ ] H11 hot-wallet keys · [ ] H12 API-key domain binding (LAST — merchant-breaking) ·
+  [~] **H13 refund state** — the exploitable **double-refund is CLOSED** (already-refunded `409` guard added with
+  C1/C2). Fee-reversal (`refund_application_fee`) + partial-refund status **DEFERRED**: they risk breaking live
+  refunds for edge-case charges and need a Stripe test refund to verify — accounting refinement, not a security hole.
 
 ## 🟡 MEDIUM
 - [ ] 30-day JWT/revocation · [ ] manage-code brute/flood · [ ] subscription-cycle idempotency · [ ] fee-hardcoded-1% ·

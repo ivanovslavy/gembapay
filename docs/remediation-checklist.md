@@ -43,8 +43,9 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
   (merchant,email) stops email flood + attempt-cap reset) · [ ] subscription-cycle idempotency · [ ] fee-hardcoded-1% ·
   [ ] VAT reverse-charge · [ ] invoice-number race · [x] **upload magic-byte** (both KYC upload handlers now sniff
   the real file signature — jpeg/png/webp/pdf — not the spoofable client mimetype) · [ ] dashboard clickjacking-scope ·
-  [ ] real CSP · [x] **PII logs** (central `requestLogger` IP masked → last octet `.0`; scattered email logs =
-  minor residual) · [x] **verbose errors** (central `errorHandler` generic-5xx + **61 direct catch-block 500s**
+  [ ] real CSP · [x] **PII logs** (central `requestLogger` IP masked → `.0`; real email addresses in
+  invoice-generator + contact logs masked → `j***@domain`; other "email" log hits were message-text, not PII) ·
+  [x] **verbose errors** (central `errorHandler` generic-5xx + **61 direct catch-block 500s**
   genericized in admin/auth/kyc/merchant; paypal/stripe deferred to "together" — a generic 500 could hide a payment
   decline reason) · [x] **admin POST /wallets + PUT /settings DONE**
   (payment/fix txHash-check DEFERRED — touches crediting) · [ ] orderId→token (BREAKING — with H6/H12) ·

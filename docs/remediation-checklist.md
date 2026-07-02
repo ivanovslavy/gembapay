@@ -14,8 +14,12 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
 - [x] **C2 — Cross-merchant Stripe refund IDOR** (`routes/stripe.routes.js`). Added ownership check + already-refunded
   guard + pinned refund mode to the payment (not the caller's key → no test-drives-live). **Verified:** no-auth → 401.
   🟢 Transparent — refunding your OWN payment still works; only cross-merchant abuse blocked.
-- [ ] **C3 — Testnet listener credits REAL mainnet orders** (`workers/event-listener-testnet.js`).
-- [ ] **C4 — Zero-confirmation crediting** (`workers/event-listener.js`).
+- [x] **C3 — Testnet listener credits REAL mainnet orders** (`workers/event-listener-testnet.js`). Scoped all 3
+  order lookups to `isTestMode: true`. **Verified:** testnet listener restarted, pollers active, no crash.
+  🟢 Transparent (fixes a bug; testnet payments can no longer resolve/complete live mainnet orders).
+- [x] **C4 — Zero-confirmation crediting** (`workers/event-listener.js`). Credit only up to
+  `currentBlock - safetyMargin` (per-chain confirmation depth) + guard. **Verified:** mainnet listener restarted,
+  all pollers active, no crash. 🟡 **BEHAVIOR-CHANGE** — see migration notes.
 
 ## 🟠 HIGH
 - [ ] H1 email-2FA bypass · [ ] H2 CF origin-lock · [ ] H3 root priv-esc · [ ] H4 unit-file perms · [ ] H5 deps ·
@@ -40,4 +44,8 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
 - **C1 (🔴 BREAKING):** `POST /api/paypal/refund` now **requires merchant authentication** (was open to anyone) and
   only refunds payments belonging to the calling merchant. Any integration calling this endpoint **unauthenticated
   will now receive `401`** and must authenticate (merchant session). Refunding another merchant's capture is blocked (`404`).
+- **C4 (🟡 behavior-change, no code change):** crypto payments are now confirmed only after a per-chain
+  **confirmation depth** (Ethereum ~50 blocks/~10 min, BSC ~100/~5 min, Polygon ~150/~5 min, gemba ~5). Orders are
+  marked paid **slightly later** (after finality) instead of at 0 confirmations — this prevents reorg-based false
+  credits. No merchant code change; inform merchants/customers that on-chain confirmation now takes a few minutes.
 - *(more will be appended as fixes land — esp. H12 API-key domain binding, orderId→token, JWT lifetime.)*

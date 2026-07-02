@@ -41,7 +41,8 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
 ## 🟡 MEDIUM
 - [ ] 30-day JWT/revocation · [ ] manage-code brute/flood · [ ] subscription-cycle idempotency · [ ] fee-hardcoded-1% ·
   [ ] VAT reverse-charge · [ ] invoice-number race · [ ] upload magic-byte/AV · [ ] dashboard clickjacking-scope ·
-  [ ] real CSP · [ ] PII logs · [ ] verbose errors · [ ] admin PUT/settings + wallets + payment/fix · [ ] orderId→token ·
+  [ ] real CSP · [ ] PII logs · [ ] verbose errors · [~] admin (**POST /wallets `isAddress` DONE**; PUT/settings
+  allowlist + payment/fix txHash-check pending) · [ ] orderId→token (BREAKING — with H6/H12) ·
   [ ] CORS no-Origin · [ ] 0.0.0.0→localhost · [ ] Payment isTestMode · [ ] idempotency @unique · [ ] token decimals.
 
 ## ⚪ LOW / latent

@@ -61,7 +61,7 @@ clickjacking-scope (Shopify embed), orderId→token (BREAKING checkout), 0.0.0.0
 - [~] `.env.bak-*` sprawl (already `600 root` — not exposed; owner may purge for retention) ·
   [x] **world-readable `*.bak`** (all source backups → `600 root`) · [~] trust proxy (login-adjacent → together) ·
   [x] **HSTS** (verified: Cloudflare sets `max-age=15552000; includeSubDomains`; app `hsts:false` correct by design) ·
-  [~] JWT alg pin (login-adjacent → together) ·
+  [x] **JWT alg pin** (verify pins `algorithms: ['HS256']` in auth.service + twofa.service; **owner-tested: login + 2FA + dashboard all work**) ·
   [~] subs active-before-settle (payment → together) · [ ] trial-stacking (subscription) · [~] `/payment-request` amount
   bound (payment → together) · [x] **KYC signed-URL TTL** (3600→900s, 15 min) ·
   [~] `r2://` leak (private bucket, low-sensitivity — marginal) · [x] dead wallet-bearer route (searched — not present) ·

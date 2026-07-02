@@ -69,7 +69,9 @@ clickjacking-scope (Shopify embed), orderId→token (BREAKING checkout), 0.0.0.0
   [x] **world-readable `*.bak`** (all source backups → `600 root`) · [~] trust proxy (login-adjacent → together) ·
   [x] **HSTS** (verified: Cloudflare sets `max-age=15552000; includeSubDomains`; app `hsts:false` correct by design) ·
   [x] **JWT alg pin** (verify pins `algorithms: ['HS256']` in auth.service + twofa.service; **owner-tested: login + 2FA + dashboard all work**) ·
-  [~] subs active-before-settle (payment → together) · [x] **trial-stacking** (Stripe `subscribeStripe`: trial only for first-time subscriber per plan+email,
+  [x] **subs active-before-settle** (Stripe `incomplete`→'incomplete'; PayPal APPROVAL_PENDING/APPROVED/default→'incomplete'
+  — not marked active until first payment settles) · [x] **recurring cycle-fee** (Stripe+PayPal `_recordCycle` hardcoded
+  `feeRate=0.01` → `getMerchantFeeRate`; payment path was fine, only recurring record was wrong) · [x] **trial-stacking** (Stripe `subscribeStripe`: trial only for first-time subscriber per plan+email,
   case-insensitive; **self-verified** via read-only prisma query — valid, no runtime error; PayPal path noted TODO) · [x] **`/payment-request` amount
   bound** (merchant.routes lacked positive-check — parseFloat(-5)/NaN passed; added `isNaN||<=0` + max 1M, parity
   with euro route; route confirmed apiKey-authed; live bad-amount test needs a merchant key = hashed/unavailable) ·

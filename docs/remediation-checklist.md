@@ -22,7 +22,8 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
   all pollers active, no crash. 🟡 **BEHAVIOR-CHANGE** — see migration notes.
 
 ## 🟠 HIGH
-- [ ] H1 email-2FA bypass · [ ] H2 CF origin-lock · [ ] H3 root priv-esc · [ ] H4 unit-file perms · [ ] H5 deps ·
+- [ ] H1 email-2FA bypass · [ ] H2 CF origin-lock · [x] **H3 root priv-esc** (rpc-telemetry script → root:root 644) ·
+  [x] **H4 unit-file perms** (all `gembapay-*.service` → root:root 644; daemon-reload; services stayed active) · [ ] H5 deps ·
   [ ] H6 secret over-fetch · [ ] H7 raw-SQL admin · [ ] H8 cmd-injection · [ ] H9 amount-verify · [ ] H10 RPC-verify ·
   [ ] H11 hot-wallet keys · [ ] H12 API-key domain binding · [ ] H13 refund state (double/partial/fee-reversal).
 

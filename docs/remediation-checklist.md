@@ -76,7 +76,9 @@ clickjacking-scope (Shopify embed), orderId→token (BREAKING checkout), 0.0.0.0
 
 ## ⚪ LOW / latent
 - [~] `.env.bak-*` sprawl (already `600 root` — not exposed; owner may purge for retention) ·
-  [x] **world-readable `*.bak`** (all source backups → `600 root`) · [~] trust proxy (login-adjacent → together) ·
+  [x] **world-readable `*.bak`** (all source backups → `600 root`) · [x] **trust proxy** (self-verified SAFE, no change: `trust proxy = 1` is NOT spoofable — live test with a
+  forged `X-Forwarded-For: 88.88.88.88` through CF logged the CF edge IP, not the spoof → no rate-limit bypass.
+  Switching to CF-Connecting-IP would be *riskier* without a confirmed origin lock) ·
   [x] **HSTS** (verified: Cloudflare sets `max-age=15552000; includeSubDomains`; app `hsts:false` correct by design) ·
   [x] **JWT alg pin** (verify pins `algorithms: ['HS256']` in auth.service + twofa.service; **owner-tested: login + 2FA + dashboard all work**) ·
   [x] **subs active-before-settle** (Stripe `incomplete`→'incomplete'; PayPal APPROVAL_PENDING/APPROVED/default→'incomplete'

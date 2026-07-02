@@ -419,6 +419,33 @@ Used by the hosted subscribe page to render plan details. No authentication.
 }
 ```
 
+### Merchant: Subscribe (with optional first-charge discount)
+
+Server-to-server subscribe for one of your **own** plans — for platforms that provision subscriptions in code (e.g. after validating a customer's promo code). Enforces plan ownership.
+
+**Endpoint:** `POST /api/subscriptions/plan/:token/subscribe`
+
+**Authentication:** Merchant API key (or dashboard JWT)
+
+**Request Body:**
+```json
+{
+  "email": "jane@example.com",
+  "method": "stripe",
+  "firstChargeDiscount": { "percent": 20 }
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| email | string | Yes | Customer's email (billing + cancellation flow) |
+| method | string | No | `stripe` (default) or `paypal` |
+| firstChargeDiscount | object | No | `{ "percent": 1-100 }` — discount applied to the **first cycle only**. **Stripe only**: passing it with `method: "paypal"` returns `400`. |
+
+**Response:** same as [Public: Subscribe](#public-subscribe) — a `url` to redirect the customer to.
+
+> **First-charge discounts are Stripe-only (platform-wide).** They use Stripe's one-time coupon (`duration: once`), applied per subscriber to the first invoice. PayPal has no equivalent — its only way to discount a first cycle is a plan-level `TRIAL` billing cycle baked into the plan, which cannot be applied per subscriber. So if a merchant wants to offer a first-charge discount, the customer must subscribe via **Stripe**; a `paypal` subscribe carrying a discount is rejected with `400` (never silently charged full price).
+
 ### Public: Subscribe
 
 Starts a subscription for a customer and returns where to redirect them to authorize and pay the first cycle (Stripe Checkout or PayPal approval). No authentication.

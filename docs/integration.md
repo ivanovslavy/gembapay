@@ -128,6 +128,8 @@ Pass an `externalRef` to make creation **idempotent** — re-running your provis
 
 On the subscribe page the customer enters their email, chooses a method, and pays the first cycle. The auto-recurring subscription then begins immediately.
 
+> **First-charge discounts are Stripe-only.** If you start a subscription with a first-charge discount, the customer must pay via **Stripe** — PayPal cannot apply a per-subscription discount (its only discount path is a plan-level trial cycle, which is not per-subscriber), so a PayPal subscribe carrying a discount is rejected rather than silently charged full price.
+
 ### Subscription Lifecycle
 
 ```

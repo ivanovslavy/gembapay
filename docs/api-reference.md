@@ -218,7 +218,7 @@ The customer is then taken to `https://payment.gembapay.com{checkoutPath}` and c
 
 Subscriptions let a merchant bill customers automatically on a recurring schedule. A merchant creates **plans** (price, billing interval, accepted methods); each plan exposes a hosted subscribe link and an embeddable button. Recurring charges are executed by the **native subscription engines of Stripe and PayPal** — crypto subscriptions are not supported.
 
-Plan management endpoints require **merchant JWT** (dashboard) authentication. The subscribe and manage flows used by the hosted pages are **public** (no authentication). Each successful billing cycle is recorded in the merchant's transactions and triggers the merchant's `payment.completed` webhook (see [Webhooks](webhooks.md#subscription-events)).
+Plan management endpoints require **merchant authentication** — an **API key** (for programmatic provisioning, recommended) or a dashboard JWT. The subscribe and manage flows used by the hosted pages are **public** (no authentication). Each successful billing cycle is recorded in the merchant's transactions and triggers the merchant's `payment.completed` webhook (see [Webhooks](webhooks.md#subscription-events)).
 
 ### Create a Plan
 

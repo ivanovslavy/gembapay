@@ -100,3 +100,15 @@ GembaPay backend = /gembapay.com/backend (NOT git). GembaKitchen = /gembakitchen
   no conflict) -> pushed. Owner: `git stash pop` to reconcile their landing WIP with the GMB commits.
 ### REMAINING: owner-dash UI to ISSUE discount codes (backend admin.issueDiscountCodes ready; needs an admin route + owner
   React page). STAGE 3 (GembaPay dashboard sub-page removal + landing copy). PayPal first-charge discount (Stripe-only now).
+
+## ===== STAGE 3 DONE + DEPLOYED (2026-07-03) — gembapay dashboard/marketing/docs =====
+### merchant-dashboard: REMOVED Subscriptions plan-management page platform-wide (API-only). App.jsx (import+route),
+  DashboardLayout.jsx (nav), Subscriptions.jsx deleted. Vite build OK (no dangling refs), gembapay-merchant-dashboard restarted, 200.
+### marketing: subscription copy -> programmatic in EN/BG/ES i18n (intro + createTitle + createBody: "in the dashboard"
+  -> "via the API / programmatically"). Payment-link "dashboard" mentions left intact. Rebuilt (prerender) + live.
+### SEO/AI: public/llms.txt subscription "in the dashboard" -> "programmatically via the API" (x2); copied to build;
+  live at gembapay.com/llms.txt (verified). ai.txt had no dashboard-creation claim (unchanged). sitemap regenerated (17+12).
+### GitHub docs: integration.md Subscriptions section ("No code required / Dashboard -> Subscriptions -> New Plan" steps
+  -> POST /api/subscriptions with API key + externalRef idempotency + embed snippet from API response). api-reference.md
+  plan-mgmt auth note -> "API key (recommended) or dashboard JWT". Backups: gembapay-secfix-backups/20260702/{mdash,mktg,docs}.
+### NOTE: gembapay frontend (merchant-dashboard, marketing) is NOT git — deployed in place. Only docs (this gitrepo) committed.

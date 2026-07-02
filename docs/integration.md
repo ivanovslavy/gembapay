@@ -111,24 +111,20 @@ Developers who want to read a link's details or start checkout programmatically 
 
 ## Subscriptions (Recurring Billing)
 
-Charge your customers automatically on a recurring schedule — for memberships, SaaS plans, or any service billed per period. No code is required: you create plans in the Merchant Dashboard, then share a hosted subscribe link or paste an embeddable button on your own website.
+Charge your customers automatically on a recurring schedule — for memberships, SaaS plans, or any service billed per period. You create plans **programmatically via the GembaPay API**, then share a hosted subscribe link or paste an embeddable button on your own website.
 
 Recurring billing is handled by the **native subscription engines of Stripe and PayPal**, which automatically charge each cycle and manage retries and dunning for failed payments. **Crypto subscriptions are not supported**, because a wallet cannot be auto-charged without on-chain authorization for each individual charge.
 
 ### Create a Plan
 
-1. Go to **Dashboard → Subscriptions → New Plan**
-2. Set the plan **name** (e.g. Basic, Pro, Ultimate), **price** (EUR), and **billing interval** (weekly, monthly, or yearly)
-3. Choose which methods to accept — **Stripe**, **PayPal**, or both
-4. *(Optional)* Set free **trial days**
-5. Save — the plan gets a hosted **subscribe link** and an **embeddable button**
+Plans are created **programmatically via the API** — `POST /api/subscriptions` with your merchant API key. Provide the plan **name** (e.g. Basic, Pro, Ultimate), **price** (EUR), **billing interval** (weekly, monthly, or yearly), the methods to accept (**Stripe**, **PayPal**, or both), and optional free **trial days**. The response includes the plan’s hosted **subscribe link** and an **embeddable button**. See [Create a Plan](api-reference.md#create-a-plan) for the full request and response.
 
-Create as many tiers as you like; you can edit a plan or pause new sign-ups at any time.
+Pass an `externalRef` to make creation **idempotent** — re-running your provisioning code returns the existing plan instead of creating a duplicate. Create as many tiers as you like and manage them via the API.
 
 ### Share or Embed
 
 - **Subscribe link** — share `the plan's hosted subscribe page` directly (email, chat, social).
-- **Embeddable button** — copy the button snippet from the dashboard and paste it onto your own website. Clicking it opens the GembaPay-hosted subscribe page.
+- **Embeddable button** — use the button snippet returned by the API and paste it onto your own website. Clicking it opens the GembaPay-hosted subscribe page.
 
 On the subscribe page the customer enters their email, chooses a method, and pays the first cycle. The auto-recurring subscription then begins immediately.
 

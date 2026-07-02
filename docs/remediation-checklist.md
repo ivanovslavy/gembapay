@@ -67,8 +67,10 @@ clickjacking-scope (Shopify embed), orderId→token (BREAKING checkout), 0.0.0.0
   [x] **HSTS** (verified: Cloudflare sets `max-age=15552000; includeSubDomains`; app `hsts:false` correct by design) ·
   [x] **JWT alg pin** (verify pins `algorithms: ['HS256']` in auth.service + twofa.service; **owner-tested: login + 2FA + dashboard all work**) ·
   [~] subs active-before-settle (payment → together) · [x] **trial-stacking** (Stripe `subscribeStripe`: trial only for first-time subscriber per plan+email,
-  case-insensitive; **self-verified** via read-only prisma query — valid, no runtime error; PayPal path noted TODO) · [~] `/payment-request` amount
-  bound (payment → together) · [x] **KYC signed-URL TTL** (3600→900s, 15 min) ·
+  case-insensitive; **self-verified** via read-only prisma query — valid, no runtime error; PayPal path noted TODO) · [x] **`/payment-request` amount
+  bound** (merchant.routes lacked positive-check — parseFloat(-5)/NaN passed; added `isNaN||<=0` + max 1M, parity
+  with euro route; route confirmed apiKey-authed; live bad-amount test needs a merchant key = hashed/unavailable) ·
+  [x] **KYC signed-URL TTL** (3600→900s, 15 min) ·
   [~] `r2://` leak (private bucket, low-sensitivity — marginal) · [x] dead wallet-bearer route (searched — not present) ·
   [~] blog `dangerouslySetInnerHTML` (frontend, not backend) · [~] web3 nonce (crypto → together) · [~] DB DDL (needs read-only role — owner) ·
   [ ] latent JWT fallback fail-closed · [ ] latent webhook fail-open → fail-closed.

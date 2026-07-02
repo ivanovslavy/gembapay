@@ -41,7 +41,12 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
 ## 🟡 MEDIUM
 - [ ] 30-day JWT/revocation · [x] **manage-code** (`crypto.randomInt` not `Math.random`; 60s cooldown per
   (merchant,email) stops email flood + attempt-cap reset) · [ ] subscription-cycle idempotency · [ ] fee-hardcoded-1% ·
-  [ ] VAT reverse-charge · [ ] invoice-number race · [x] **upload magic-byte** (both KYC upload handlers now sniff
+  [x] **VAT reverse-charge** (self-verified CORRECT: `calculateVATRate` → BG 20% · EU-B2B+validVAT → rate 0 +
+  reverse-charge + Art.196 note · EU-B2C 20% · non-EU 0; not a bug) · [~] **invoice-number race** (FAIL-SAFE: `invoiceNumber`
+  is `@unique` → duplicates impossible; concurrent race → 2nd invoice fails `P2002`, re-runnable, no corruption.
+  Both worker + admin do read-increment numbering; atomic fix `UPDATE system_settings SET value=(value::int+1) RETURNING
+  value-1` verified working but DEFERRED — compliance-critical, can't fully test worker without sending real invoice emails) ·
+  [x] **upload magic-byte** (both KYC upload handlers now sniff
   the real file signature — jpeg/png/webp/pdf — not the spoofable client mimetype) · [ ] dashboard clickjacking-scope ·
   [ ] real CSP · [x] **PII logs** (central `requestLogger` IP masked → `.0`; real email addresses in
   invoice-generator + contact logs masked → `j***@domain`; other "email" log hits were message-text, not PII) ·

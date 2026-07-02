@@ -58,9 +58,14 @@ subscription-cycle `@unique` (billing + migration), fee-hardcoded-1% + VAT + inv
 clickjacking-scope (Shopify embed), orderId→token (BREAKING checkout), 0.0.0.0→localhost (bind/restart).
 
 ## ⚪ LOW / latent
-- [ ] `.env.bak-*` sprawl · [ ] world-readable `*.bak` · [ ] trust proxy · [ ] HSTS origin · [ ] JWT alg pin ·
-  [ ] subs active-before-settle · [ ] trial-stacking · [ ] `/payment-request` amount bound · [ ] KYC signed-URL TTL ·
-  [ ] `r2://` leak · [ ] dead wallet-bearer route · [ ] blog `dangerouslySetInnerHTML` · [ ] web3 nonce · [ ] DB DDL ·
+- [~] `.env.bak-*` sprawl (already `600 root` — not exposed; owner may purge for retention) ·
+  [x] **world-readable `*.bak`** (all source backups → `600 root`) · [~] trust proxy (login-adjacent → together) ·
+  [x] **HSTS** (verified: Cloudflare sets `max-age=15552000; includeSubDomains`; app `hsts:false` correct by design) ·
+  [~] JWT alg pin (login-adjacent → together) ·
+  [~] subs active-before-settle (payment → together) · [ ] trial-stacking (subscription) · [~] `/payment-request` amount
+  bound (payment → together) · [x] **KYC signed-URL TTL** (3600→900s, 15 min) ·
+  [~] `r2://` leak (private bucket, low-sensitivity — marginal) · [x] dead wallet-bearer route (searched — not present) ·
+  [~] blog `dangerouslySetInnerHTML` (frontend, not backend) · [~] web3 nonce (crypto → together) · [~] DB DDL (needs read-only role — owner) ·
   [ ] latent JWT fallback fail-closed · [ ] latent webhook fail-open → fail-closed.
 
 ---

@@ -41,9 +41,16 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
 ## 🟡 MEDIUM
 - [ ] 30-day JWT/revocation · [ ] manage-code brute/flood · [ ] subscription-cycle idempotency · [ ] fee-hardcoded-1% ·
   [ ] VAT reverse-charge · [ ] invoice-number race · [ ] upload magic-byte/AV · [ ] dashboard clickjacking-scope ·
-  [ ] real CSP · [ ] PII logs · [ ] verbose errors · [~] admin (**POST /wallets `isAddress` DONE**; PUT/settings
-  allowlist + payment/fix txHash-check pending) · [ ] orderId→token (BREAKING — with H6/H12) ·
-  [ ] CORS no-Origin · [ ] 0.0.0.0→localhost · [ ] Payment isTestMode · [ ] idempotency @unique · [ ] token decimals.
+  [ ] real CSP · [ ] PII logs · [~] verbose errors (central `errorHandler` → generic on 5xx DONE; many routes still
+  return `err.message` directly = broad sweep pending) · [x] **admin POST /wallets + PUT /settings DONE**
+  (payment/fix txHash-check DEFERRED — touches crediting) · [ ] orderId→token (BREAKING — with H6/H12) ·
+  [x] **CORS** (disallowed origin → clean block not 500; no-Origin allow kept so mobile/server clients aren't broken) ·
+  [ ] 0.0.0.0→localhost · [ ] Payment isTestMode · [ ] idempotency @unique · [ ] token decimals.
+
+**Deferred MEDIUM that touch payments/login/dashboard (do together, per owner):** payment/fix on-chain check,
+subscription-cycle `@unique` (billing + migration), fee-hardcoded-1% + VAT + invoice-race (invoicing/amounts),
+`Payment.isTestMode` column (migration), token-decimals (crypto crediting), real CSP (dashboard rendering),
+clickjacking-scope (Shopify embed), orderId→token (BREAKING checkout), 0.0.0.0→localhost (bind/restart).
 
 ## ⚪ LOW / latent
 - [ ] `.env.bak-*` sprawl · [ ] world-readable `*.bak` · [ ] trust proxy · [ ] HSTS origin · [ ] JWT alg pin ·

@@ -41,7 +41,8 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
 ## 🟡 MEDIUM
 - [ ] 30-day JWT/revocation · [x] **manage-code** (`crypto.randomInt` not `Math.random`; 60s cooldown per
   (merchant,email) stops email flood + attempt-cap reset) · [ ] subscription-cycle idempotency · [ ] fee-hardcoded-1% ·
-  [ ] VAT reverse-charge · [ ] invoice-number race · [ ] upload magic-byte/AV · [ ] dashboard clickjacking-scope ·
+  [ ] VAT reverse-charge · [ ] invoice-number race · [x] **upload magic-byte** (both KYC upload handlers now sniff
+  the real file signature — jpeg/png/webp/pdf — not the spoofable client mimetype) · [ ] dashboard clickjacking-scope ·
   [ ] real CSP · [ ] PII logs · [~] verbose errors (central `errorHandler` → generic on 5xx DONE; many routes still
   return `err.message` directly = broad sweep pending) · [x] **admin POST /wallets + PUT /settings DONE**
   (payment/fix txHash-check DEFERRED — touches crediting) · [ ] orderId→token (BREAKING — with H6/H12) ·

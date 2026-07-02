@@ -50,7 +50,10 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
   decline reason) · [x] **admin POST /wallets + PUT /settings DONE**
   (payment/fix txHash-check DEFERRED — touches crediting) · [ ] orderId→token (BREAKING — with H6/H12) ·
   [x] **CORS** (disallowed origin → clean block not 500; no-Origin allow kept so mobile/server clients aren't broken) ·
-  [ ] 0.0.0.0→localhost · [ ] Payment isTestMode · [ ] idempotency @unique ·
+  [~] 0.0.0.0→localhost (deferred — ufw already blocks the port; proxy-target unconfirmed → outage risk) ·
+  [x] **Payment isTestMode** (migration + backfill + 12 sites — done) ·
+  [x] **idempotency @unique** (DB backed up; `CREATE UNIQUE INDEX payments_provider_payment_id_key`; 0 dups; NULLs
+  unconstrained; findFirst + DB constraint + self-healing retries; migrate status clean) ·
   [x] **token decimals** (self-verified NOT a bug: all mainnet stablecoins in `TOKEN_DECIMALS` with correct decimals;
   6 unlisted addresses are all 18-dec TESTNET tokens where default-18 is correct. Latent: add a lookup entry when
   onboarding a new non-18-decimal MAINNET token).

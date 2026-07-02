@@ -86,3 +86,17 @@ GembaPay backend = /gembapay.com/backend (NOT git). GembaKitchen = /gembakitchen
   (/api/subscriptions/public/manage/:merchantToken/{code,verify,cancel}). merchantToken = gembakitchen's merchant token.
 - STAGE 3: GembaPay merchant-dashboard subscription plan page removal (platform-wide); landing copy -> programmatic.
 - GIT: gembakitchen repo diverged (2 behind + landing WIP not mine) -> reconcile before push.
+
+## ===== FRONTEND + CANCEL DONE + DEPLOYED + PUSHED (2026-07-03) =====
+### Billing.jsx (dashboard, backup .pre-subs) -> FULL UI: subscribe (recurring, GembaPay) + optional promo discount
+  code + BUY GIFT code (recipient email) + redeem prepaid code + CANCEL (email->6-digit code->confirm). Vite build OK,
+  dashboard serves new asset, all routes 401 no-auth. i18n EN/BG.
+### Cancel backend: env.js +merchantId (GEMBAPAY_MERCHANT_ID in .env = a401c772... , the manage token, NOT committed);
+  lib/gembapay +manageSendCode/manageCancel (proxy GembaPay's hardened manage flow); billing.service +startCancel/
+  confirmCancel (owner email + user's gembapaySubscriptionId; cancelByCustomer verifies code+ownership); billing.routes
+  +/cancel/{code,confirm}. gembakitchen-api restarted.
+### GIT: staged ONLY integration files (12) — owner landing WIP NOT touched. Secret-scan clean (no keys/pw/merchant-id).
+  Committed d831bdb + dd1fcf7 (plan). Stashed owner landing WIP (stash@{0}) -> rebased onto origin/main (2 GMB commits,
+  no conflict) -> pushed. Owner: `git stash pop` to reconcile their landing WIP with the GMB commits.
+### REMAINING: owner-dash UI to ISSUE discount codes (backend admin.issueDiscountCodes ready; needs an admin route + owner
+  React page). STAGE 3 (GembaPay dashboard sub-page removal + landing copy). PayPal first-charge discount (Stripe-only now).

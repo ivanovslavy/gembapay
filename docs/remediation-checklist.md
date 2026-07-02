@@ -24,7 +24,9 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
 ## 🟠 HIGH
 - [ ] H1 email-2FA bypass · [ ] H2 CF origin-lock · [x] **H3 root priv-esc** (rpc-telemetry script → root:root 644) ·
   [x] **H4 unit-file perms** (all `gembapay-*.service` → root:root 644; daemon-reload; services stayed active) · [ ] H5 deps ·
-  [ ] H6 secret over-fetch · [ ] H7 raw-SQL admin · [ ] H8 cmd-injection · [ ] H9 amount-verify · [ ] H10 RPC-verify ·
+  [ ] H6 secret over-fetch · [x] **H7 raw-SQL admin** (schema route SQLi → parameterized `$queryRaw`; `/db/query`
+  denylist still needs a read-only DB role — noted) · [x] **H8 cmd-injection** (`generate-monthly` `month` → strict
+  `YYYY-MM` validation) · [ ] H9 amount-verify · [ ] H10 RPC-verify ·
   [ ] H11 hot-wallet keys · [ ] H12 API-key domain binding · [ ] H13 refund state (double/partial/fee-reversal).
 
 ## 🟡 MEDIUM

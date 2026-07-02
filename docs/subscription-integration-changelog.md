@@ -70,3 +70,19 @@ GembaPay backend = /gembapay.com/backend (NOT git). GembaKitchen = /gembakitchen
   in Billing.jsx: email -> 6-digit code -> confirm -> cancel. Do NOT build a parallel cancel.
 ## STAGE 3: remove GembaPay merchant-dashboard subscription plan page (platform-wide, API-only); landing copy -> programmatic.
 ## GIT: gembakitchen repo is diverged (2 behind + local landing WIP not mine) — reconcile at the end before pushing.
+
+## DISCOUNT CODES (owner decision: prepaid codes stay one-time; NEW admin percent-off codes for recurring 1st charge)
+### [DONE, self-verified] pg_dump pre-discount; migration 20260703090000_discount_codes -> new DiscountCode model
+  {codeHash unique, percentOff, status, maxUses, uses, expiresAt}. billing.service.resolveDiscountCode (validate +
+  atomic single-use consume -> {percent}); billing.routes /subscribe resolves req.body.code server-side (never client %).
+  admin.service.issueDiscountCodes (owner issues codes, plaintext once). Self-test: issue 25%/maxUses1 -> resolve
+  {percent:25} -> re-resolve "fully used" -> cleanup. Prepaid RedemptionCode (qortal/gift/admin) UNCHANGED (Qortal store intact).
+
+## ===== BACKEND 100% COMPLETE + VERIFIED. REMAINING = FRONTEND + STAGE 3 + GIT =====
+- 2c FRONTEND: dashboard/src/pages/Billing.jsx -> subscription-only ("Choose a subscription plan" -> POST /billing/subscribe
+  {planSlug, code?} -> redirect to returned url). Trial stays. React rebuild + redeploy gembakitchen-dashboard.
+- ADMIN UI: owner console -> issue discount codes (calls admin.issueDiscountCodes). React.
+- 2f CANCEL UI: Billing.jsx -> email -> 6-digit code -> confirm, proxying GembaPay manage flow
+  (/api/subscriptions/public/manage/:merchantToken/{code,verify,cancel}). merchantToken = gembakitchen's merchant token.
+- STAGE 3: GembaPay merchant-dashboard subscription plan page removal (platform-wide); landing copy -> programmatic.
+- GIT: gembakitchen repo diverged (2 behind + landing WIP not mine) -> reconcile before push.

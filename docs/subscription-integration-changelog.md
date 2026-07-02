@@ -112,3 +112,14 @@ GembaPay backend = /gembapay.com/backend (NOT git). GembaKitchen = /gembakitchen
   -> POST /api/subscriptions with API key + externalRef idempotency + embed snippet from API response). api-reference.md
   plan-mgmt auth note -> "API key (recommended) or dashboard JWT". Backups: gembapay-secfix-backups/20260702/{mdash,mktg,docs}.
 ### NOTE: gembapay frontend (merchant-dashboard, marketing) is NOT git — deployed in place. Only docs (this gitrepo) committed.
+
+## ===== ONE-TIME PAYMENT MODEL RESTORED + TWO-MODEL DESIGN (2026-07-03) =====
+### Realization: subscription-only-recurring cut off CRYPTO payers (GMB/QORT) — a wallet can't be auto-charged each
+  cycle (native coins have no allowance; unlimited ERC-20 allowance = drainable = against security-first). One-time
+  backend was fully INTACT (createCheckout + payment.completed->extend); only the UI button had been removed.
+### Decision: ONE subscription model, TWO funding cadences (NOT building crypto auto-deduction — ERC-20-only,
+  drainable, big audited project). Card = recurring auto-renew (fiat only). One-time = pay-per-period, no auto-renew
+  (fiat + crypto), 20% GMB discount on EVERY payment; before-expiry email reminder is 1:1 (kept for non-auto-renew subs).
+### Billing.jsx: added "Choose a one time payment plan" block under the subscription block (same plans/prices; buy()
+  -> /billing/checkout -> poll /billing/status). subHint "(fiat only)"; oneTimeHint "(fiat + crypto)". Rebuilt + live.
+### Docs: gembakitchen README "Subscriptions — how to pay" rewritten (two models + why crypto must pick one-time).

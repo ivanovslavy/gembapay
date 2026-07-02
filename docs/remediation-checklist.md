@@ -56,7 +56,8 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
   onboarding a new non-18-decimal MAINNET token).
 
 **Deferred MEDIUM that touch payments/login/dashboard (do together, per owner):** payment/fix on-chain check,
-subscription-cycle `@unique` (billing + migration), fee-hardcoded-1% + VAT + invoice-race (invoicing/amounts),
+subscription-cycle `@unique` (billing + migration), ~~fee-hardcoded-1%~~ (self-verified NOT a bug: `getMerchantFeeRate` = customFeeRate > high-risk(10%) > env-configurable
+default; Stripe+PayPal both use it; crypto fee is on-chain) + VAT + invoice-race (invoicing/amounts),
 `Payment.isTestMode` column (migration), token-decimals (crypto crediting), real CSP (dashboard rendering),
 clickjacking-scope (Shopify embed), orderId→token (BREAKING checkout), 0.0.0.0→localhost (bind/restart).
 

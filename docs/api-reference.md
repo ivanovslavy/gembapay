@@ -224,7 +224,7 @@ Plan management endpoints require **merchant authentication** — an **API key**
 
 **Endpoint:** `POST /api/subscriptions`
 
-**Authentication:** JWT Token (merchant dashboard)
+**Authentication:** Merchant API key (or dashboard JWT)
 
 **Request Body:**
 ```json
@@ -278,7 +278,7 @@ Plan management endpoints require **merchant authentication** — an **API key**
 
 **Endpoint:** `GET /api/subscriptions`
 
-**Authentication:** JWT Token
+**Authentication:** Merchant API key (or dashboard JWT)
 
 **Response:**
 ```json
@@ -295,7 +295,7 @@ Plan management endpoints require **merchant authentication** — an **API key**
 
 **Endpoint:** `GET /api/subscriptions/:id`
 
-**Authentication:** JWT Token
+**Authentication:** Merchant API key (or dashboard JWT)
 
 **Response:** the plan object (same shape as in [Create a Plan](#create-a-plan)).
 
@@ -303,7 +303,7 @@ Plan management endpoints require **merchant authentication** — an **API key**
 
 **Endpoint:** `PATCH /api/subscriptions/:id`
 
-**Authentication:** JWT Token
+**Authentication:** Merchant API key (or dashboard JWT)
 
 Update a plan's status (for example, to pause new sign-ups or archive it).
 
@@ -330,7 +330,7 @@ Update a plan's status (for example, to pause new sign-ups or archive it).
 
 **Endpoint:** `GET /api/subscriptions/subscribers`
 
-**Authentication:** JWT Token
+**Authentication:** Merchant API key (or dashboard JWT)
 
 **Response:**
 ```json
@@ -355,7 +355,7 @@ Update a plan's status (for example, to pause new sign-ups or archive it).
 
 **Endpoint:** `GET /api/subscriptions/metrics`
 
-**Authentication:** JWT Token
+**Authentication:** Merchant API key (or dashboard JWT)
 
 **Response:**
 ```json
@@ -380,7 +380,7 @@ Update a plan's status (for example, to pause new sign-ups or archive it).
 
 **Endpoint:** `POST /api/subscriptions/subscribers/:id/cancel`
 
-**Authentication:** JWT Token
+**Authentication:** Merchant API key (or dashboard JWT)
 
 Cancels a subscriber's subscription at period end (the provider stops billing at the next cycle). The customer can also cancel themselves via the public manage flow below.
 

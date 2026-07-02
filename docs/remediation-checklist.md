@@ -39,7 +39,8 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
   refunds for edge-case charges and need a Stripe test refund to verify — accounting refinement, not a security hole.
 
 ## 🟡 MEDIUM
-- [ ] 30-day JWT/revocation · [ ] manage-code brute/flood · [ ] subscription-cycle idempotency · [ ] fee-hardcoded-1% ·
+- [ ] 30-day JWT/revocation · [x] **manage-code** (`crypto.randomInt` not `Math.random`; 60s cooldown per
+  (merchant,email) stops email flood + attempt-cap reset) · [ ] subscription-cycle idempotency · [ ] fee-hardcoded-1% ·
   [ ] VAT reverse-charge · [ ] invoice-number race · [ ] upload magic-byte/AV · [ ] dashboard clickjacking-scope ·
   [ ] real CSP · [ ] PII logs · [~] verbose errors (central `errorHandler` → generic on 5xx DONE; many routes still
   return `err.message` directly = broad sweep pending) · [x] **admin POST /wallets + PUT /settings DONE**

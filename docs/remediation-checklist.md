@@ -55,7 +55,10 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
   6 unlisted addresses are all 18-dec TESTNET tokens where default-18 is correct. Latent: add a lookup entry when
   onboarding a new non-18-decimal MAINNET token).
 
-**Deferred MEDIUM that touch payments/login/dashboard (do together, per owner):** payment/fix on-chain check,
+**"Together" batch (touch payments/login/dashboard) — progress:** [x] JWT alg-pin (tested) · [x] trial-stacking ·
+[x] token-decimals (not-a-bug) · [x] fee-1% (not-a-bug) · [x] /payment-request amount · [x] **payment/fix**
+(re-completion 409 guard; audit-logged; on-chain txHash verify = deeper follow-up) · remaining below:
+**Deferred MEDIUM that touch payments/login/dashboard (do together, per owner):** ~~payment/fix~~,
 subscription-cycle `@unique` (billing + migration), ~~fee-hardcoded-1%~~ (self-verified NOT a bug: `getMerchantFeeRate` = customFeeRate > high-risk(10%) > env-configurable
 default; Stripe+PayPal both use it; crypto fee is on-chain) + VAT + invoice-race (invoicing/amounts),
 `Payment.isTestMode` column (migration), token-decimals (crypto crediting), real CSP (dashboard rendering),

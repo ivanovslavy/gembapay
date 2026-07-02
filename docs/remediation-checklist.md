@@ -50,7 +50,10 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
   decline reason) · [x] **admin POST /wallets + PUT /settings DONE**
   (payment/fix txHash-check DEFERRED — touches crediting) · [ ] orderId→token (BREAKING — with H6/H12) ·
   [x] **CORS** (disallowed origin → clean block not 500; no-Origin allow kept so mobile/server clients aren't broken) ·
-  [ ] 0.0.0.0→localhost · [ ] Payment isTestMode · [ ] idempotency @unique · [ ] token decimals.
+  [ ] 0.0.0.0→localhost · [ ] Payment isTestMode · [ ] idempotency @unique ·
+  [x] **token decimals** (self-verified NOT a bug: all mainnet stablecoins in `TOKEN_DECIMALS` with correct decimals;
+  6 unlisted addresses are all 18-dec TESTNET tokens where default-18 is correct. Latent: add a lookup entry when
+  onboarding a new non-18-decimal MAINNET token).
 
 **Deferred MEDIUM that touch payments/login/dashboard (do together, per owner):** payment/fix on-chain check,
 subscription-cycle `@unique` (billing + migration), fee-hardcoded-1% + VAT + invoice-race (invoicing/amounts),

@@ -41,3 +41,32 @@ GembaPay backend = /gembapay.com/backend (NOT git). GembaKitchen = /gembakitchen
   the authenticated server-to-server discount path (GembaKitchen validates its voucher) is wired in Stage 2.
 - PayPal first-charge discount = follow-up (PayPal has no clean once-coupon; use a discounted first cycle or Stripe-only).
 - STAGE 1 (GembaPay enabler) COMPLETE: 1a webhooks + 1b API plan mgmt + 1c coupon. Next: STAGE 2 GembaKitchen.
+
+## STAGE 2 — GembaKitchen (/gembakitchen.com, own git)
+### 2a DB [DONE]: pg_dump pre-subs (248K); migration 20260702200000_recurring_subscription_fields adds
+  plans.{recurring, gembapay_plan_token, interval} + subscriptions.{gembapay_subscription_id, auto_renew}. migrate up to date.
+### 2b plan-sync [DONE, verified idempotent]: lib/gembapay.js +createSubscriptionPlan; scripts/sync-gembapay-plans.js.
+  Ran → 4 recurring plans created in GembaPay (m1 month x1 EUR29, m3 month x3 EUR79, m6 month x6 EUR149, m12 year x1 EUR279);
+  tokens stored on Plan.gembapayPlanToken + recurring=true. Re-run = same tokens, 1 plan/externalRef (idempotent).
+### 2d webhook handler [DONE, self-verified]: STAGE 1a payloads +eventId (both providers, sudo). billing.service.js
+  (backup .pre-subs) +handleSubscriptionEvent; handleWebhook routes subscription.* to it (email->User->restaurantId
+  mapping; extend via shared computeExtension; idempotent by gpsub_<eventId>; autoRenew=true; canceled->autoRenew=false).
+  Self-test: unknown email->ignored (no write), routing OK, token d1f4->plan m1(recurring,month). Happy-path uses proven computeExtension.
+### 2e email [DONE]: lib/email.js (backup .pre-subs) +sendSubscriptionRenewed (after-payment). subscription-reminders.js
+  (backup .pre-subs) skips sub.autoRenew (auto-renewing subs get no before-expiry reminder; canceled/one-time still do).
+### 2c backend [in progress]: GembaPay subscribeAsMerchant (ownership + validated first-charge discount) + auth route.
+### 2c backend [DONE]: GembaPay subscription.service.js +subscribeAsMerchant (ownership + clamped first-charge
+  discount); subscription.routes.js +POST /plan/:token/subscribe (dashOrApiKey, verified 401 no-auth). GembaKitchen
+  lib/gembapay.js +createSubscribeSession; billing.service.js +createSubscription (owner-email->subscribe);
+  billing.routes.js +POST /billing/subscribe (requireAuth). gembakitchen-api restarted OK.
+
+## STAGE 2 REMAINING (frontend + open question + cleanup)
+- 2c FRONTEND: Billing.jsx -> subscription-only UI ("Choose a subscription plan"; trial stays; paid -> /billing/subscribe
+  -> redirect to GembaPay). React app, needs rebuild + redeploy of gembakitchen-dashboard.
+- DISCOUNT-CODE SEMANTICS (OPEN — needs owner): current RedemptionCode/voucher codes grant a PERIOD, but owner wants
+  codes = first-charge PERCENT discount. Need the mapping (which codes -> which %). subscribeAsMerchant already accepts
+  a clamped firstChargeDiscount; wire billing.routes /subscribe to resolve code->percent server-side once semantics fixed.
+- 2f CANCEL: surface GembaPay's hardened manage flow (/api/subscriptions/public/manage/:merchantToken/{code,verify,cancel})
+  in Billing.jsx: email -> 6-digit code -> confirm -> cancel. Do NOT build a parallel cancel.
+## STAGE 3: remove GembaPay merchant-dashboard subscription plan page (platform-wide, API-only); landing copy -> programmatic.
+## GIT: gembakitchen repo is diverged (2 behind + local landing WIP not mine) — reconcile at the end before pushing.

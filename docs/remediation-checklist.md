@@ -25,7 +25,9 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
 - [x] **H1 email-2FA bypass** (`hashCode` → keyed HMAC(code, JWT_SECRET) so the codeHash in the challenge JWT is
   not reversible offline; **owner-tested: login works**) · [ ] H2 CF origin-lock (deferred — whole-site outage risk;
   do in a maintenance window) · [x] **H3 root priv-esc** (rpc-telemetry script → root:root 644) ·
-  [x] **H4 unit-file perms** (all `gembapay-*.service` → root:root 644; daemon-reload; services stayed active) · [ ] H5 deps ·
+  [x] **H4 unit-file perms** (all `gembapay-*.service` → root:root 644; daemon-reload; services stayed active) · [x] **H5 deps** (`npm audit fix` safe/semver → **19 of 20 fixed incl. both
+  critical**; app restarted clean, **owner-tested: all 3 payments + webhooks work**. Remaining: nodemailer 1 high
+  needs `--force` major bump → deferred, needs email-flow test) ·
   [ ] H6 secret over-fetch · [x] **H7 raw-SQL admin** (schema route SQLi → parameterized `$queryRaw`; `/db/query`
   denylist still needs a read-only DB role — noted) · [x] **H8 cmd-injection** (`generate-monthly` `month` → strict
   `YYYY-MM` validation) · [x] **H9 amount-verify** (main quote/USD handler: paid < requested×0.90 → `underpaid`,

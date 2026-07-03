@@ -11,7 +11,7 @@
 > (`passwordHash`, `webhookSecret`, `totpSecret`, backup codes) via a `...paymentRequest` spread — a **live,
 > unauthenticated, cross-merchant secret disclosure**. This **re-opens B1 and B3/H6 below, whose "the public
 > /payment/:orderId does NOT return the secret / not a live leak" conclusion was WRONG** (it checked the safe
-> `/api/euro/...` sibling and missed the `/api/customer/...` one). **Fixed + verified live 2026-07-03** — see the
+> `/api/euro/...` sibling and missed the `/api/customer/...` one). a whitelist fix was applied and verified, then **REVERTED at the owner's request (2026-07-03) — so the leak is currently OPEN** and to be fixed later on the owner's terms. See the
 > **POST-MEGA-AUDIT** section at the end. Owner action still open: **ROTATE** any exposed merchant secrets.
 
 ---
@@ -221,9 +221,9 @@ All of the below are **live and verified**. Severity uses the original audit's s
 - **⚠️ CORRECTION (2026-07-03):** this "not a live leak" claim was **WRONG**. It verified the
   `/api/euro/payment/:orderId` sibling (safe — explicit fields) but **missed `/api/customer/payment/:orderId`**,
   which spread the FULL merchant row (`passwordHash`/`webhookSecret`/`totpSecret`/backup codes) to any
-  unauthenticated caller = a **LIVE CRITICAL** cross-merchant secret leak. **Found + FIXED + verified live
-  2026-07-03** (see the POST-MEGA-AUDIT section; the endpoint now returns only companyName/legalName/websiteUrl,
-  no secrets). The remaining B3 over-fetch (owner-facing `auth.routes.js` returning `webhookSecret` to the
+  unauthenticated caller = a **LIVE CRITICAL** cross-merchant secret leak. **Found by the mega-audit; a whitelist
+  fix was applied + verified then REVERTED at the owner's request (2026-07-03) — the leak is OPEN** (see the
+  POST-MEGA-AUDIT section). The remaining B3 over-fetch (owner-facing `auth.routes.js` returning `webhookSecret` to the
   **authenticated owner** + the paypal apiKey-fragment log) is the only 🟢 LOW leftover.
 - **Real fix:** replace `include: { merchant: true }` with `select: { …only needed fields… }`; drop the apiKey
   fragment from the paypal log.
@@ -368,14 +368,16 @@ All of the below are **live and verified**. Severity uses the original audit's s
 
 ---
 
-## POST-MEGA-AUDIT (2026-07-03) — FIXED (owner-authorized): customer.routes.js /payment/:orderId merchant-secret leak (re-opened H6/B1)
+## POST-MEGA-AUDIT (2026-07-03) — OPEN (fix reverted at owner's request): customer.routes.js /payment/:orderId merchant-secret leak (re-opened H6/B1)
 
 The multi-agent mega-audit confirmed a LIVE unauthenticated leak that yesterday's H6/B1 assessment wrongly cleared.
+
+**STATUS: OPEN.** A whitelist fix was applied + verified live, then **reverted at the owner's request** (owner will fix it later on their own terms). The leak below is LIVE again. The fix that WAS verified working is kept here as the ready-to-apply remediation.
 
 - Endpoint: GET /api/customer/payment/:orderId (src/routes/customer.routes.js ~line 111), public/no-auth. Sibling GET /payment/:orderId/status (~line 194) over-returned PII similarly.
 - Bug: handler did findUnique with include:{merchant:true} then res.json({ ...paymentRequest }). The spread serialized the FULL Merchant row: passwordHash, webhookSecret, totpSecret, twoFactorBackupCodes, stripeAccountId, paypalMerchantId + KYC/PII, plus the order's customerEmail/metadata. Any orderId (shared checkout links / GK-derived) reached any merchant's secrets. Confirmed live (HTTP 200 with a real bcrypt passwordHash + webhookSecret; values not recorded).
 - Why yesterday missed it: H6 (~line 213) and B1 (~line 168) verified /api/euro/payment/:orderId (euro.routes.js, explicit named fields, only merchantName, safe) and generalised "not a live leak". The customer.routes.js sibling with the ...paymentRequest spread was never checked. Same class as H6/B1, but a distinct un-verified endpoint; the earlier "safe" call was wrong.
 - Impact: leaked webhookSecret enables forging HMAC-signed webhooks GembaKitchen billing trusts (free subscriptions); totpSecret/backup codes defeat 2FA; passwordHash enables offline cracking.
-- FIX APPLIED + verified: narrowed the merchant include to non-secret checkout fields only (select companyName/legalName/websiteUrl) and stripped customer PII (customerEmail) from the spread. KEEP metadata (Success.jsx reads metadata.viaPaymentLink) and the top-level merchantAddress (on-chain, Checkout.jsx). Same PII strip on /status. Verified: renders 200, merchant has only companyName/legalName/websiteUrl, NO secrets, checkout + crypto intact. Bonus: the fix also populates merchantName, which was always null because the code read non-existent merchant.businessName/merchant.name (real field is companyName).
+- FIX (verified working, then REVERTED at owner's request — apply this when scheduled): narrowed the merchant include to non-secret checkout fields only (select companyName/legalName/websiteUrl) and stripped customer PII (customerEmail) from the spread. KEEP metadata (Success.jsx reads metadata.viaPaymentLink) and the top-level merchantAddress (on-chain, Checkout.jsx). Same PII strip on /status. Verified: renders 200, merchant has only companyName/legalName/websiteUrl, NO secrets, checkout + crypto intact. Bonus: the fix also populates merchantName, which was always null because the code read non-existent merchant.businessName/merchant.name (real field is companyName).
 - REMAINING OWNER ACTION: ROTATE any merchant webhookSecret/passwordHash/totpSecret readable during the exposure window (webhookSecret must be updated in both the GembaPay Merchant row AND the merchant app .env, e.g. GembaKitchen GEMBAPAY_WEBHOOK_SECRET).
 - Severity: CRITICAL (unauthenticated cross-tenant merchant-secret disclosure).

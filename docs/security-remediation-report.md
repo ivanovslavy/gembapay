@@ -6,6 +6,14 @@
 > apply the *correct* fix, know the result, and know **exactly what it breaks for already-onboarded merchants**.
 > Companion file: `docs/remediation-checklist.md` (terse status ledger). This file is the detailed narrative.
 
+> ⚠️ **2026-07-03 UPDATE — a CRITICAL was found + FIXED after this document was first written.** The
+> multi-agent mega-audit found that **`GET /api/customer/payment/:orderId` publicly leaked the FULL merchant row**
+> (`passwordHash`, `webhookSecret`, `totpSecret`, backup codes) via a `...paymentRequest` spread — a **live,
+> unauthenticated, cross-merchant secret disclosure**. This **re-opens B1 and B3/H6 below, whose "the public
+> /payment/:orderId does NOT return the secret / not a live leak" conclusion was WRONG** (it checked the safe
+> `/api/euro/...` sibling and missed the `/api/customer/...` one). **Fixed + verified live 2026-07-03** — see the
+> **POST-MEGA-AUDIT** section at the end. Owner action still open: **ROTATE** any exposed merchant secrets.
+
 ---
 
 ## 0. How this codebase is operated (read first)
@@ -205,13 +213,18 @@ All of the below are **live and verified**. Severity uses the original audit's s
 - **Damage if never fixed:** a leaked publishable key remains replayable from any origin. **Benefit:** limits blast
   radius of a leaked browser key. (Low, because keys are bearer tokens by design and hashed at rest.)
 
-### B3 — H6: secret over-fetch  ·  severity 🟢 LOW (verified mostly not an active leak)
+### B3 — H6: secret over-fetch  ·  severity 🔴 was a LIVE CRITICAL on /api/customer/payment (FIXED 2026-07-03); the remaining over-fetch is 🟢 LOW
 
 - **Recognise it:** several handlers do `include: { merchant: true }` (fetches the full merchant, incl.
   `webhookSecret`, into memory). `webhookSecret` is returned in `auth.routes.js:210/304/624` (to the **authenticated
   owner** — normal). `paypal.routes.js:223` **logs the first 15 chars of `merchant.apiKey`**.
-- **Verified:** the PUBLIC `/payment/:orderId` does NOT return the secret. So this is **not a live external leak** —
-  it's over-fetching into memory + one partial-key log line.
+- **⚠️ CORRECTION (2026-07-03):** this "not a live leak" claim was **WRONG**. It verified the
+  `/api/euro/payment/:orderId` sibling (safe — explicit fields) but **missed `/api/customer/payment/:orderId`**,
+  which spread the FULL merchant row (`passwordHash`/`webhookSecret`/`totpSecret`/backup codes) to any
+  unauthenticated caller = a **LIVE CRITICAL** cross-merchant secret leak. **Found + FIXED + verified live
+  2026-07-03** (see the POST-MEGA-AUDIT section; the endpoint now returns only companyName/legalName/websiteUrl,
+  no secrets). The remaining B3 over-fetch (owner-facing `auth.routes.js` returning `webhookSecret` to the
+  **authenticated owner** + the paypal apiKey-fragment log) is the only 🟢 LOW leftover.
 - **Real fix:** replace `include: { merchant: true }` with `select: { …only needed fields… }`; drop the apiKey
   fragment from the paypal log.
 - **Result:** secrets aren't pulled into request memory / logs unnecessarily (defense-in-depth).

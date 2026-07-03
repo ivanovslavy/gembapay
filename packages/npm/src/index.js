@@ -4,7 +4,7 @@ const https = require('https');
 const crypto = require('crypto');
 
 const BASE_URL = 'https://api.gembapay.com';
-const VERSION = '1.0.0';
+const VERSION = '1.1.0';
 
 class GembaPayError extends Error {
   constructor(message, statusCode, code) {
@@ -58,23 +58,26 @@ class GembaPay {
   }
 
   /**
-   * Get payment details
+   * Get full order details for one of YOUR orders (authenticated, ownership-scoped).
+   * Includes customerEmail + metadata. Returns 404 for orders that aren't yours.
+   * (The public /api/customer/payment endpoint is for the checkout page and omits customer PII.)
    * @param {string} orderId - Order identifier
-   * @returns {Promise<Object>} Payment details
+   * @returns {Promise<Object>} The order (orderId, status, amountUsd, customerEmail, metadata, payment, …)
    */
   async getPayment(orderId) {
     if (!orderId) throw new GembaPayError('orderId is required', null, 'missing_param');
-    return this._request('GET', `/api/customer/payment/${encodeURIComponent(orderId)}`);
+    const res = await this._request('GET', `/api/merchant/payment/${encodeURIComponent(orderId)}`);
+    return res.order || res;
   }
 
   /**
-   * Check payment status
+   * Check payment status for one of YOUR orders (authenticated, ownership-scoped).
    * @param {string} orderId - Order identifier
-   * @returns {Promise<Object>} Payment status
+   * @returns {Promise<Object>} Payment status ({ status, orderId, amountUsd, network, completedAt, isTestMode })
    */
   async getPaymentStatus(orderId) {
     if (!orderId) throw new GembaPayError('orderId is required', null, 'missing_param');
-    return this._request('GET', `/api/customer/payment/${encodeURIComponent(orderId)}/status`);
+    return this._request('GET', `/api/merchant/payment-status/${encodeURIComponent(orderId)}`);
   }
 
   // ── Merchant ─────────────────────────────────────────

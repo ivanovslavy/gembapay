@@ -63,7 +63,7 @@ class GembaPay_API {
      * @return array|WP_Error
      */
     public function get_payment_status($order_id) {
-        return $this->request('GET', '/api/customer/payment/' . $order_id . '/status');
+        return $this->request('GET', '/api/merchant/payment-status/' . $order_id);
     }
 
     /**
@@ -73,7 +73,7 @@ class GembaPay_API {
      * @return array|WP_Error
      */
     public function get_payment($order_id) {
-        return $this->request('GET', '/api/customer/payment/' . $order_id);
+        return $this->request('GET', '/api/merchant/payment/' . $order_id);
     }
 
     /**

@@ -24,12 +24,19 @@ key; the guessable `orderId` stays only as the merchant-side (authenticated) key
   merchant, not publicly enumerable). Verified: create → paymentUrl is a UUID token → public lookup by token = 200,
   no PII/secret leak → legacy orderId still 200 → authed endpoint 200.
 
+## ✅ DONE — Phase 2 (euro path, live + E2E-verified 2026-07-03)
+
+- `GET /api/euro/payment/:orderId` no longer returns `customerEmail` and its merchant include is narrowed to
+  `companyName/legalName` (merchantName no longer falls back to the merchant's login email). Its `/pay/${orderId}`
+  URL now carries the `accessToken`, and euro.routes got the same `router.param('orderId')` token/orderId resolver
+  (covers `/onchain-status` too). Verified: euro-by-orderId = 200 with no `customerEmail` key and no secret values;
+  euro-by-token = 200 resolving to the right order. Rich euro order data (incl. customer email) is available via the
+  authenticated `GET /api/merchant/payment/:orderId`.
+
 ## 🔜 TO DO
 
 ### GembaPay (owner) — remaining platform work
-1. **Euro path** — apply the same split + token lookup to `GET /api/euro/payment/:orderId` (still keys on orderId and
-   still returns `customerEmail` publicly) and change its `/pay/${orderId}` URL to the token. *(Phase B — in progress.)*
-2. **SDK + plugins** — no change needed for checkout (they already redirect to the returned `paymentUrl`). **Do**
+1. **SDK + plugins** — no change needed for checkout (they already redirect to the returned `paymentUrl`). **Do**
    move status polling off the public endpoint: `npm` SDK `getPaymentStatus()` and the WooCommerce plugin currently
    call the public `GET /api/customer/payment/:orderId/status`; point them at the **authenticated**
    `GET /api/merchant/payment-status/:orderId` (API key). Ship a new SDK/plugin version.

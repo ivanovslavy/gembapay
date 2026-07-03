@@ -172,10 +172,11 @@ All of the below are **live and verified**. Severity uses the original audit's s
 > (`paymentUrl`, payment-link `checkoutPath`, Stripe/PayPal `success_url`+`cancel_url`) carry the **token**; a
 > `router.param('orderId')` resolver on `customer.routes` accepts the token OR (still, during transition) the legacy
 > orderId. Authenticated merchant endpoints keep orderId (safe — scoped). The **customer-PII portion is CLOSED**
-> (`customerEmail` removed from the public responses — see POST-MEGA-AUDIT). **Still pending** (see
-> `b1-orderid-token-migration.md`): the **euro** endpoint below (`/api/euro/payment/:orderId`) still keys on orderId
-> and **still returns `customerEmail`**; and the final **enumeration close** = retiring the legacy-orderId branch from
-> the resolvers after the merchant transition window.
+> (`customerEmail` removed from the public responses — see POST-MEGA-AUDIT). **Phase 2 (2026-07-03) did the same to
+> the euro path**: `/api/euro/payment/:orderId` no longer returns `customerEmail`, its merchant include is narrowed,
+> its `/pay/` URL carries the token, and it got the same token/orderId resolver. **Still pending** (see
+> `b1-orderid-token-migration.md`): moving SDK/plugin status-polling to the authed endpoint, merchant comms, and the
+> final **enumeration close** = retiring the legacy-orderId branch from the resolvers after the transition window.
 
 - **Recognise it:** `GET /api/euro/payment/:orderId` (`routes/euro.routes.js:270`) is **PUBLIC** (no auth) and its
   `res.json` (line ~319–353) returns `amount, description, status, txHash, merchantName`, **and `customerEmail`**.

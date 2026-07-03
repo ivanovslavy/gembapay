@@ -60,9 +60,10 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
   genericized in admin/auth/kyc/merchant; paypal/stripe deferred to "together" — a generic 500 could hide a payment
   decline reason) · [x] **admin POST /wallets + PUT /settings DONE**
   (payment/fix txHash-check DEFERRED — touches crediting) · [~] **orderId→token (B1) — Phase 1 SHIPPED 2026-07-03**
-  (`access_token` uuid column + backfill; checkout/success/cancel URLs now carry the token; `customer.routes`
-  resolver accepts token or legacy orderId; authed endpoints keep orderId. **E2E-verified.** Remaining: euro path +
-  retire legacy-orderId branch after merchant transition — see `b1-orderid-token-migration.md`) ·
+  (`access_token` uuid column + backfill; checkout/success/cancel URLs now carry the token; `customer.routes` **and**
+  `euro.routes` resolvers accept token or legacy orderId; euro endpoint also stripped of `customerEmail`; authed
+  endpoints keep orderId. **E2E-verified (customer + euro).** Remaining: move SDK/plugin status-polling to the authed
+  endpoint + retire the legacy-orderId branch after the merchant transition — see `b1-orderid-token-migration.md`) ·
   [x] **CORS** (disallowed origin → clean block not 500; no-Origin allow kept so mobile/server clients aren't broken) ·
   [~] 0.0.0.0→localhost (deferred — ufw already blocks the port; proxy-target unconfirmed → outage risk) ·
   [x] **Payment isTestMode** (migration + backfill + 12 sites — done) ·

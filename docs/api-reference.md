@@ -446,6 +446,26 @@ Server-to-server subscribe for one of your **own** plans — for platforms that 
 
 > **First-charge discounts are Stripe-only (platform-wide).** They use Stripe's one-time coupon (`duration: once`), applied per subscriber to the first invoice. PayPal has no equivalent — its only way to discount a first cycle is a plan-level `TRIAL` billing cycle baked into the plan, which cannot be applied per subscriber. So if a merchant wants to offer a first-charge discount, the customer must subscribe via **Stripe**; a `paypal` subscribe carrying a discount is rejected with `400` (never silently charged full price).
 
+### Merchant: Re-price a plan
+
+Change a subscription plan's recurring price. Stripe Prices are immutable, so this creates a **new** Stripe Price on the plan's product, points the plan at it, and **migrates every active subscription** to the new price with **no proration** — the new price takes effect at each subscriber's next renewal. Enforces plan ownership. (PayPal subscriptions are not re-priced.)
+
+**Endpoint:** `POST /api/subscriptions/plan/:token/reprice`
+
+**Authentication:** Merchant API key (or dashboard JWT)
+
+**Request Body:**
+```json
+{ "amount": 34.99 }
+```
+
+**Response:**
+```json
+{ "token": "...", "amount": 34.99, "stripePriceId": "price_...", "migrated": 12, "failed": 0, "total": 12 }
+```
+
+`migrated`/`failed`/`total` report the subscription migration. If the plan has no Stripe product yet (no subscribers), it returns `400` — set the price on the plan and it applies when the first customer subscribes.
+
 ### Public: Subscribe
 
 Starts a subscription for a customer and returns where to redirect them to authorize and pay the first cycle (Stripe Checkout or PayPal approval). No authentication.

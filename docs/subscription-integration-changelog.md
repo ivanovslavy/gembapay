@@ -123,3 +123,10 @@ GembaPay backend = /gembapay.com/backend (NOT git). GembaKitchen = /gembakitchen
 ### Billing.jsx: added "Choose a one time payment plan" block under the subscription block (same plans/prices; buy()
   -> /billing/checkout -> poll /billing/status). subHint "(fiat only)"; oneTimeHint "(fiat + crypto)". Rebuilt + live.
 ### Docs: gembakitchen README "Subscriptions — how to pay" rewritten (two models + why crypto must pick one-time).
+
+## ===== STAGE B — owner-dash Plans + prices (2026-07-03) =====
+### B1: owner Plans page (edit name/price/active) + PATCH /admin/plans/:id. One-time price applies immediately; recurring flagged.
+### B2: recurring price change (owner: migrate existing, no proration). GembaPay platform endpoint POST /api/subscriptions/plan/
+  :token/reprice (repriceStripe: new immutable Stripe Price on the product -> plan points at it -> migrate active subs, proration_behavior:none).
+  GembaKitchen updatePlan -> gembapay.reprice + price_change notification + price-change email to affected owners; lazy if no Stripe product yet.
+  Verified in Stripe TEST mode (test plan 9.99->12.99->14.99, migrated 0, restored). Owner-decision: next-renewal, no proration.

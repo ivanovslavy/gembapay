@@ -18,7 +18,9 @@ Ivanov Payment Gateway with GembaPay enables you to accept cryptocurrency, credi
 
 * **Unified Checkout** - Single integration for Crypto, Stripe, and PayPal
 * **Multi-Chain Crypto** - Accept payments on Ethereum, BNB Smart Chain, and Polygon
-* **Multiple Tokens** - ETH, BNB, POL, USDC, USDT
+* **Multiple Tokens** - ETH, BNB, POL, USDC, USDT, plus EURC and GMB
+* **EURC Stablecoin** - Accept the euro-pegged EURC stablecoin on Ethereum and Polygon
+* **GMB Token** - Native GembaBlockchain (GMB) token; a configurable discount can be offered to GMB holders at checkout
 * **Fiat Payments** - Credit/Debit Cards, Apple Pay, Google Pay via Stripe
 * **PayPal** - PayPal Balance, Bank Account, Pay Later
 * **86+ Currencies** - Set prices in your local currency
@@ -37,8 +39,8 @@ Ivanov Payment Gateway with GembaPay enables you to accept cryptocurrency, credi
 
 = Requirements =
 
-* WooCommerce 6.0 or higher
-* PHP 7.4 or higher
+* WooCommerce 7.0 or higher
+* PHP 8.0 or higher
 * GembaPay merchant account with approved KYC
 * SSL certificate (HTTPS)
 
@@ -85,7 +87,7 @@ Yes, you need to register at gembapay.com and complete KYC verification to get y
 
 = What currencies are supported? =
 
-GembaPay supports 86+ fiat currencies for pricing. Cryptocurrency payments support ETH, BNB, POL, USDC, and USDT on Ethereum, BNB Smart Chain, and Polygon networks.
+GembaPay supports 86+ fiat currencies for pricing. Cryptocurrency payments support ETH, BNB, POL, USDC, USDT, the euro-pegged EURC stablecoin (on Ethereum and Polygon), and the GMB (GembaBlockchain) token, across Ethereum, BNB Smart Chain, and Polygon networks.
 
 = How are crypto payments handled? =
 
@@ -118,6 +120,8 @@ Yes! GembaPay uses industry-standard security practices. Crypto payments use aud
 * Order detail / status lookups now use the authenticated merchant API endpoints
   (GET /api/merchant/payment/:orderId and /payment-status/:orderId) instead of the
   public customer endpoints. Checkout and webhooks are unchanged.
+* Documented EURC stablecoin support (Ethereum, Polygon) and the GMB token.
+* readme: aligned stated requirements to WooCommerce 7.0 / PHP 8.0.
 
 = 1.0.0 =
 * Initial release

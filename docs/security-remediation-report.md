@@ -174,9 +174,12 @@ All of the below are **live and verified**. Severity uses the original audit's s
 > orderId. Authenticated merchant endpoints keep orderId (safe — scoped). The **customer-PII portion is CLOSED**
 > (`customerEmail` removed from the public responses — see POST-MEGA-AUDIT). **Phase 2 (2026-07-03) did the same to
 > the euro path**: `/api/euro/payment/:orderId` no longer returns `customerEmail`, its merchant include is narrowed,
-> its `/pay/` URL carries the token, and it got the same token/orderId resolver. **Still pending** (see
-> `b1-orderid-token-migration.md`): moving SDK/plugin status-polling to the authed endpoint, merchant comms, and the
-> final **enumeration close** = retiring the legacy-orderId branch from the resolvers after the transition window.
+> its `/pay/` URL carries the token, and it got the same token/orderId resolver. **2026-07-03 — B1 fully CLOSED:**
+> the SDK (v1.1.0) + WooCommerce moved to the authed endpoints, and the legacy-orderId branch was **retired** from
+> both resolvers — the public customer + euro endpoints now resolve **only** the access token (raw/guessed orderId →
+> 404), so order-metadata enumeration is closed. Authenticated merchant endpoints still key on orderId (unaffected).
+> All E2E-verified. Remaining is operational only (see `b1-orderid-token-migration.md`): `npm publish` the SDK, optional
+> merchant notice, minor paypal `return_url`.
 
 - **Recognise it:** `GET /api/euro/payment/:orderId` (`routes/euro.routes.js:270`) is **PUBLIC** (no auth) and its
   `res.json` (line ~319–353) returns `amount, description, status, txHash, merchantName`, **and `customerEmail`**.

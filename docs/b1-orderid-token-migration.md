@@ -56,15 +56,27 @@ email." Applied consistently across:
   endpoints. (These methods were unused — the plugin is webhook-driven — so this is correctness, not a functional
   fix; no plugin re-release urgency.)
 
+## ✅ DONE — Phase 5 (legacy orderId RETIRED — enumeration fully closed, 2026-07-03)
+
+The `router.param('orderId')` resolvers on **customer.routes** and **euro.routes** now resolve **only** the
+`accessToken`; a raw/guessed orderId (or any unknown value) returns **404**. Order-metadata enumeration via the
+public endpoints is fully closed — the access token is the only public key. **Authenticated merchant endpoints are
+unaffected** (they key on orderId, in merchant.routes, outside this resolver). Done immediately at the owner's
+request rather than after a transition window — risk verified negligible first: 0 pending orders created in the last
+24h (all 137 pending are stale/expired), and the SDK + WooCommerce already use the authed endpoints. E2E-verified:
+public by-token 200 / by-orderId 404 (customer + euro + status), garbage 404, authed by-orderId 200.
+
+**B1 core is now CLOSED.** Files backed up in `/home/slavy/gembapay-secfix-backups/20260703-b1-retire-legacy/`.
+
 ## 🔜 TO DO
 
-### GembaPay (owner) — remaining platform work
-1. **Publish** the npm SDK v1.1.0 (`npm publish`); optionally re-release the WooCommerce plugin.
-2. **Notify merchants** of the transition + a retirement date for legacy orderId public lookups.
-3. **Retire the legacy branch (final, closes enumeration):** after the transition window, remove the `orderId`
-   fallback from the `router.param` resolvers (customer + euro) so the public endpoints accept **only** the token →
-   guessing an orderId returns nothing.
-4. *(minor)* PayPal `return_url` (`/api/paypal/return/:orderId`, a backend callback) and the dead
+### GembaPay (owner) — remaining
+1. **Publish** the npm SDK v1.1.0 (`npm publish`); optionally re-release the WooCommerce plugin (see the update
+   steps the owner was given). Merchants on old SDK/plugin versions that polled the public status endpoint by orderId
+   should upgrade — those calls now 404.
+2. *(optional)* **Notify merchants** that any hand-built `/checkout/{orderId}` links or public status polling by
+   orderId no longer work — use the returned `paymentUrl` and the authed endpoints (docs already updated).
+3. *(minor)* PayPal `return_url` (`/api/paypal/return/:orderId`, a backend callback) and the dead
    `merchant.controller.js` URL builder still use orderId — switch when convenient.
 
 ### What each merchant must do after the change

@@ -59,11 +59,12 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
   [x] **verbose errors** (central `errorHandler` generic-5xx + **61 direct catch-block 500s**
   genericized in admin/auth/kyc/merchant; paypal/stripe deferred to "together" — a generic 500 could hide a payment
   decline reason) · [x] **admin POST /wallets + PUT /settings DONE**
-  (payment/fix txHash-check DEFERRED — touches crediting) · [~] **orderId→token (B1) — Phase 1 SHIPPED 2026-07-03**
-  (`access_token` uuid column + backfill; checkout/success/cancel URLs now carry the token; `customer.routes` **and**
-  `euro.routes` resolvers accept token or legacy orderId; euro endpoint also stripped of `customerEmail`; authed
-  endpoints keep orderId. **E2E-verified (customer + euro).** Remaining: move SDK/plugin status-polling to the authed
-  endpoint + retire the legacy-orderId branch after the merchant transition — see `b1-orderid-token-migration.md`) ·
+  (payment/fix txHash-check DEFERRED — touches crediting) · [x] **orderId→token (B1) — CLOSED 2026-07-03**
+  (`access_token` uuid column + backfill; checkout/success/cancel URLs carry the token; `customer.routes` **and**
+  `euro.routes` resolvers now resolve **only** the token — legacy orderId **retired** (raw orderId → 404, enumeration
+  closed); euro endpoint also stripped of `customerEmail`; SDK v1.1.0 + WooCommerce moved to authed endpoints; authed
+  merchant endpoints keep orderId. **All E2E-verified.** Operational remainder: `npm publish` the SDK — see
+  `b1-orderid-token-migration.md`) ·
   [x] **CORS** (disallowed origin → clean block not 500; no-Origin allow kept so mobile/server clients aren't broken) ·
   [~] 0.0.0.0→localhost (deferred — ufw already blocks the port; proxy-target unconfirmed → outage risk) ·
   [x] **Payment isTestMode** (migration + backfill + 12 sites — done) ·

@@ -17,9 +17,12 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
 - [x] **C3 — Testnet listener credits REAL mainnet orders** (`workers/event-listener-testnet.js`). Scoped all 3
   order lookups to `isTestMode: true`. **Verified:** testnet listener restarted, pollers active, no crash.
   🟢 Transparent (fixes a bug; testnet payments can no longer resolve/complete live mainnet orders).
-- [x] **C4 — Zero-confirmation crediting** (`workers/event-listener.js`). Credit only up to
-  `currentBlock - safetyMargin` (per-chain confirmation depth) + guard. **Verified:** mainnet listener restarted,
-  all pollers active, no crash. 🟡 **BEHAVIOR-CHANGE** — see migration notes.
+- [~] **C4 — Zero-confirmation crediting** (`workers/event-listener.js`). The confirmation-DELAY part was
+  **REVERTED 2026-07-03** at the owner's decision — it added a ~10 min wait on Ethereum (safetyMargin 50 × 12s) and
+  GembaPay is a small-amount gateway. Mainnet now credits at the chain head (`confirmedHead = currentBlock`), 1:1 with
+  the testnet listener; reorg-based double-spend risk on small amounts is **accepted**. The proper long-term fix
+  (amount-tiered confirmations + multi-phase webhook) is a **TODO** — see
+  `listener-changes-2026-07-03.md`. *(Original 0-conf concern noted; small-amount tradeoff chosen deliberately.)*
 
 ## 🟠 HIGH
 - [x] **H1 email-2FA bypass** (`hashCode` → keyed HMAC(code, JWT_SECRET) so the codeHash in the challenge JWT is
@@ -122,8 +125,8 @@ clickjacking-scope (Shopify embed), orderId→token (BREAKING checkout), 0.0.0.0
 - **C1 (🔴 BREAKING):** `POST /api/paypal/refund` now **requires merchant authentication** (was open to anyone) and
   only refunds payments belonging to the calling merchant. Any integration calling this endpoint **unauthenticated
   will now receive `401`** and must authenticate (merchant session). Refunding another merchant's capture is blocked (`404`).
-- **C4 (🟡 behavior-change, no code change):** crypto payments are now confirmed only after a per-chain
-  **confirmation depth** (Ethereum ~50 blocks/~10 min, BSC ~100/~5 min, Polygon ~150/~5 min, gemba ~5). Orders are
-  marked paid **slightly later** (after finality) instead of at 0 confirmations — this prevents reorg-based false
-  credits. No merchant code change; inform merchants/customers that on-chain confirmation now takes a few minutes.
-- *(more will be appended as fixes land — esp. H12 API-key domain binding, orderId→token, JWT lifetime.)*
+- **C4 (🟡 REVERTED 2026-07-03):** the per-chain confirmation delay was removed — it caused a ~10 min wait on
+  Ethereum, unacceptable for a small-amount gateway. Crypto payments are again credited at the chain head (instant),
+  1:1 mainnet↔testnet. Merchants/customers: on-chain confirmation is fast again. The reorg-safe replacement
+  (amount-tiered confirmations) is a documented TODO (`listener-changes-2026-07-03.md`), not active.
+- *(more will be appended as fixes land — esp. H12 API-key domain binding, JWT lifetime.)*

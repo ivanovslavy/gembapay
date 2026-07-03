@@ -225,7 +225,7 @@ curl -X POST https://api.gembapay.com/api/merchant/payment-request \
 {
   "success": true,
   "orderId": "ORDER-12345",
-  "paymentUrl": "https://payment.gembapay.com/checkout/ORDER-12345",
+  "paymentUrl": "https://payment.gembapay.com/checkout/3f9c1e7a-2b4d-4c8e-9f10-a2b3c4d5e6f7",
   "amountUsd": "54.35",
   "amountOriginal": 49.99,
   "currencyOriginal": "EUR",
@@ -238,6 +238,8 @@ curl -X POST https://api.gembapay.com/api/merchant/payment-request \
 ### Redirect Customer
 
 Redirect the customer to the `paymentUrl`:
+
+> **Important:** Always redirect the customer to the `paymentUrl` returned by the API — never construct the checkout URL yourself from your orderId. It now contains an unguessable token.
 
 ```javascript
 // Frontend JavaScript
@@ -288,6 +290,8 @@ For additional verification, check payment status via API:
 ```bash
 curl https://api.gembapay.com/api/customer/payment/ORDER-12345/status
 ```
+
+> **Note:** This public endpoint returns only non-sensitive status fields. For full order details (including `customerEmail`), use the authenticated `GET /api/merchant/payment/:orderId` with your API key.
 
 ---
 
@@ -534,11 +538,12 @@ Get test USDC and USDT from faucets or contact support.
 
 ## Iframe Embed
 
-Embed the unified checkout directly in your page:
+Embed the unified checkout directly in your page. Use the `paymentUrl` returned by the API as the iframe `src` — never construct the checkout URL yourself from your orderId. It now contains an unguessable token.
 
 ```html
+<!-- src is the paymentUrl returned by POST /api/merchant/payment-request -->
 <iframe 
-  src="https://payment.gembapay.com/checkout/ORDER-123"
+  src="https://payment.gembapay.com/checkout/3f9c1e7a-2b4d-4c8e-9f10-a2b3c4d5e6f7"
   width="100%"
   height="700"
   frameborder="0"

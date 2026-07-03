@@ -303,7 +303,7 @@ curl -X POST https://api.gembapay.com/api/merchant/payment-request \
 {
   "success": true,
   "orderId": "ORDER-12345",
-  "paymentUrl": "https://payment.gembapay.com/checkout/ORDER-12345",
+  "paymentUrl": "https://payment.gembapay.com/checkout/3f9c1e7a-2b4d-4c8e-9f10-a2b3c4d5e6f7",
   "amountUsd": "108.70",
   "amountOriginal": 100.00,
   "currencyOriginal": "EUR",

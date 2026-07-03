@@ -358,7 +358,7 @@ header("Location: " . $payment['paymentUrl']);
 {
   "success": true,
   "orderId": "ORDER-123",
-  "paymentUrl": "https://payment.gembapay.com/checkout/ORDER-123",
+  "paymentUrl": "https://payment.gembapay.com/checkout/3f9c1e7a-2b4d-4c8e-9f10-a2b3c4d5e6f7",
   "amountUsd": "108.70",
   "amountOriginal": 100.00,
   "currencyOriginal": "EUR",
@@ -446,10 +446,13 @@ export default CheckoutButton;
 
 ### Iframe Embed
 
+Use the `paymentUrl` returned by the API as the iframe `src` — never construct the checkout URL yourself from your orderId. It now contains an unguessable token.
+
 ```html
 <!-- Embed checkout directly in your page -->
+<!-- src is the paymentUrl returned by POST /api/merchant/payment-request -->
 <iframe 
-  src="https://payment.gembapay.com/checkout/ORDER-123"
+  src="https://payment.gembapay.com/checkout/3f9c1e7a-2b4d-4c8e-9f10-a2b3c4d5e6f7"
   width="100%"
   height="700"
   frameborder="0"
@@ -700,6 +703,8 @@ If your endpoint fails (non-2xx response), GembaPay retries:
 ## Payment Status Polling
 
 As an alternative to webhooks, you can poll for payment status:
+
+> **Note:** For server-side polling, prefer the authenticated `GET /api/merchant/payment-status/:orderId` (with your API key) over the public status endpoint shown below.
 
 ```javascript
 async function pollPaymentStatus(orderId, maxAttempts = 60) {
@@ -1050,7 +1055,7 @@ try {
                               ▼
 ┌──────────────────────────────────────────────────────────────┐
 │  3. Merchant → Customer: Redirect to payment page            │
-│     payment.gembapay.com/checkout/ORDER-123                  │
+│     payment.gembapay.com/checkout/3f9c1e7a-...-e6f7          │
 └──────────────────────────────────────────────────────────────┘
                               │
                               ▼

@@ -99,7 +99,7 @@ Creates a new payment request for a customer.
 {
   "success": true,
   "orderId": "ORDER-12345",
-  "paymentUrl": "https://payment.gembapay.com/checkout/ORDER-12345",
+  "paymentUrl": "https://payment.gembapay.com/checkout/3f9c1e7a-2b4d-4c8e-9f10-a2b3c4d5e6f7",
   "amountUsd": "108.70",
   "amountOriginal": 100.00,
   "currencyOriginal": "EUR",
@@ -114,7 +114,7 @@ Creates a new payment request for a customer.
 | Field | Description |
 |-------|-------------|
 | orderId | Your order identifier |
-| paymentUrl | URL to redirect customer for payment |
+| paymentUrl | URL to redirect customer for payment (redirect the customer here as-is; contains an unguessable token, not your orderId) |
 | amountUsd | Amount converted to USD |
 | amountOriginal | Original amount in requested currency |
 | currencyOriginal | Original currency code |

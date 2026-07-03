@@ -43,7 +43,7 @@ const payment = await gembapay.createPayment({
 });
 
 console.log(payment.paymentUrl);
-// → https://payment.gembapay.com/checkout/ORDER-123
+// → https://payment.gembapay.com/checkout/3f9c1e7a-2b4d-4c8e-9f10-a2b3c4d5e6f7
 
 console.log(payment.allowedMethods);
 // → ['crypto', 'stripe', 'paypal']
@@ -62,6 +62,7 @@ const payment = await gembapay.createPayment({
 });
 
 // Redirect customer to unified checkout
+// Redirect to payment.paymentUrl as-is (unguessable token, not your orderId)
 res.redirect(payment.paymentUrl);
 ```
 

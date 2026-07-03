@@ -393,6 +393,8 @@ async function processWebhook(payload) {
 
 For critical operations, double-check payment status:
 
+> **Note:** For server-side polling, prefer the authenticated `GET /api/merchant/payment-status/:orderId` (with your API key) over the public status endpoint shown below.
+
 ```javascript
 async function processPayment(orderId) {
   // Double-check via API

@@ -80,6 +80,9 @@ X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
     "txHash": "0x84579c019dc334474a9421072b633bdb981d0a1ab4aa4a2e48aba4189e05179d",
     "network": "bsc",
     "usdAmount": 108.70,
+    "amountOriginal": 100.00,
+    "currencyOriginal": "EUR",
+    "exchangeRate": 1.0870,
     "customerAddress": "0xc45112B334822811f4418e2f13C2C80FF790C949",
     "tokenAmount": "0.157892",
     "tokenSymbol": "BNB",
@@ -101,6 +104,9 @@ X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
     "orderId": "ORDER-12345",
     "amount": 108.70,
     "usdAmount": 108.70,
+    "amountOriginal": 100.00,
+    "currencyOriginal": "EUR",
+    "exchangeRate": 1.0870,
     "currency": "USD",
     "status": "completed",
     "txHash": "pi_3abc123xyz...",
@@ -122,6 +128,9 @@ X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
     "orderId": "ORDER-12345",
     "amount": 108.70,
     "usdAmount": 108.70,
+    "amountOriginal": 100.00,
+    "currencyOriginal": "EUR",
+    "exchangeRate": 1.0870,
     "currency": "USD",
     "status": "completed",
     "txHash": "5GP12345ABC789...",
@@ -133,6 +142,19 @@ X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
   "timestamp": "2026-01-25T08:15:05.193Z"
 }
 ```
+
+> **Original amount and currency** - every `payment.completed` webhook (crypto, Stripe and
+> PayPal) now also carries the amount and currency exactly as you requested it, next to the
+> settled `usdAmount`:
+>
+> | Field | Meaning |
+> |-------|---------|
+> | `amountOriginal` | Amount in your original request currency (e.g. `100.00`). |
+> | `currencyOriginal` | ISO code you charged in (e.g. `EUR`, `GBP`, `USD`). |
+> | `exchangeRate` | Rate applied to convert `currencyOriginal` to USD at settlement. |
+>
+> Verify payments against `amountOriginal` + `currencyOriginal` (what you asked for), not
+> only `usdAmount`.
 
 ### payment.failed
 

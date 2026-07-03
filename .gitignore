@@ -22,3 +22,6 @@ docs/remediation-checklist.md
 docs/security-audit-2026-07-02.md
 docs/security-remediation-report.md
 docs/subscription-integration-changelog.md
+
+# local backups next to edited docs (kept on server, not in repo)
+*.bak.*

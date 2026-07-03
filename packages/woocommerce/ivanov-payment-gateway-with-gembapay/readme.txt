@@ -4,7 +4,7 @@ Tags: woocommerce, payment gateway, crypto, stripe, paypal
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -114,6 +114,11 @@ Yes! GembaPay uses industry-standard security practices. Crypto payments use aud
 
 == Changelog ==
 
+= 1.1.0 =
+* Order detail / status lookups now use the authenticated merchant API endpoints
+  (GET /api/merchant/payment/:orderId and /payment-status/:orderId) instead of the
+  public customer endpoints. Checkout and webhooks are unchanged.
+
 = 1.0.0 =
 * Initial release
 * Crypto payments (ETH, BNB, POL, USDC, USDT)
@@ -124,6 +129,9 @@ Yes! GembaPay uses industry-standard security practices. Crypto payments use aud
 * Debug logging
 
 == Upgrade Notice ==
+
+= 1.1.0 =
+Uses the authenticated GembaPay merchant endpoints for order lookups. Recommended update.
 
 = 1.0.0 =
 Initial release of Ivanov Payment Gateway with GembaPay.

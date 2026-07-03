@@ -25,9 +25,10 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
 - [x] **H1 email-2FA bypass** (`hashCode` → keyed HMAC(code, JWT_SECRET) so the codeHash in the challenge JWT is
   not reversible offline; **owner-tested: login works**) · [ ] H2 CF origin-lock (deferred — whole-site outage risk;
   do in a maintenance window) · [x] **H3 root priv-esc** (rpc-telemetry script → root:root 644) ·
-  [x] **H4 unit-file perms** (all `gembapay-*.service` → root:root 644; daemon-reload; services stayed active) · [x] **H5 deps** (`npm audit fix` safe/semver → **19 of 20 fixed incl. both
-  critical**; app restarted clean, **owner-tested: all 3 payments + webhooks work**. Remaining: nodemailer 1 high
-  needs `--force` major bump → deferred, needs email-flow test) ·
+  [x] **H4 unit-file perms** (all `gembapay-*.service` → root:root 644; daemon-reload; services stayed active) · [x] **H5 deps — FULLY CLOSED 2026-07-03** (`npm audit fix` closed 19/20; the last one, **nodemailer bumped 8→9.0.3**
+  → `npm audit` now reports **0 vulnerabilities**; `emailService` loads clean with the new major. Standard
+  `createTransport`/`sendMail` usage — no API break. *Owner: trigger one real email — 2FA code / contact form — to
+  confirm delivery end-to-end.*) ·
   [x] **H6 secret over-fetch — CRITICAL sub-case FIXED 2026-07-03** (the public `/api/customer/payment/:orderId` +
   `/status` leaked the FULL merchant row incl. `webhookSecret`/`passwordHash`/`totpSecret`/`apiKey` + `customerEmail`
   via a `...paymentRequest` spread → replaced with a positive Prisma `select` allowlist; added authed ownership-scoped
@@ -40,7 +41,10 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
   not completed, no webhook; **owner-tested: normal crypto payment completes + webhook arrives**. Euro/direct
   handlers not yet covered — different currency fields) · [ ] H10 RPC-verify ·
   [ ] H11 hot-wallet keys · [ ] H12 API-key domain binding (LAST — merchant-breaking) ·
-  [~] **H13 refund state** — the exploitable **double-refund is CLOSED** (already-refunded `409` guard added with
+  [x] **H13 refund state — resolved** — the exploitable **double-refund is CLOSED** (409 guard). The fee-non-reversal
+  is **BY DESIGN, not a bug** (owner-confirmed 2026-07-03): Stripe and PayPal do not refund their processing fees on
+  refunds, and GembaPay follows the same model. Documented in the Terms of Service, new **§6.5 "Fees Are
+  Non-Refundable"** (en/bg/es, live). ~~The exploitable double-refund is CLOSED~~ (already-refunded `409` guard added with
   C1/C2). Fee-reversal (`refund_application_fee`) + partial-refund status **DEFERRED**: they risk breaking live
   refunds for edge-case charges and need a Stripe test refund to verify — accounting refinement, not a security hole.
 
@@ -76,7 +80,10 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
 
 **"Together" batch (touch payments/login/dashboard) — progress:** [x] JWT alg-pin (tested) · [x] trial-stacking ·
 [x] token-decimals (not-a-bug) · [x] fee-1% (not-a-bug) · [x] /payment-request amount · [x] **payment/fix**
-(re-completion 409 guard; audit-logged; on-chain txHash verify = deeper follow-up) · remaining below:
+(re-completion 409 guard; audit-logged; **on-chain txHash verify ADDED 2026-07-03** — best-effort: a tx that exists
+but FAILED on-chain (status 0) is rejected, a tx that can't be confirmed is flagged UNVERIFIED + audit-logged but NOT
+blocked, since public RPCs are non-archive/rate-limited and blocking would break legit fixes of older payments; full
+fail-closed needs a trusted archive RPC = B5) · remaining below:
 **Deferred MEDIUM that touch payments/login/dashboard (do together, per owner):** ~~payment/fix~~,
 subscription-cycle `@unique` (billing + migration), ~~fee-hardcoded-1%~~ (self-verified NOT a bug: `getMerchantFeeRate` = customFeeRate > high-risk(10%) > env-configurable
 default; Stripe+PayPal both use it; crypto fee is on-chain) + VAT + invoice-race (invoicing/amounts),

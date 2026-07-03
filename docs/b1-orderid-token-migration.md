@@ -33,20 +33,31 @@ key; the guessable `orderId` stays only as the merchant-side (authenticated) key
   euro-by-token = 200 resolving to the right order. Rich euro order data (incl. customer email) is available via the
   authenticated `GET /api/merchant/payment/:orderId`.
 
+## ✅ DONE — Phase 3 (docs + landing page reconciled 2026-07-03)
+
+All integration docs now describe the post-fix method — "always redirect to the returned `paymentUrl` (unguessable
+token, not your orderId); use the authenticated `GET /api/merchant/payment/:orderId` for full data incl. customer
+email." Applied consistently across:
+- **git docs** (committed + pushed): `integration.md`, `api-reference.md`, `webhooks.md`, `DEV_SUPPORT.md`,
+  `README.md`, `packages/npm/README.md` — example URLs now show a token, added the "use returned paymentUrl" rule and
+  the authed-endpoint note; iframe examples use the returned `paymentUrl`.
+- **landing / marketing** (rebuilt + redeployed `gembapay-marketing`): `Integration.jsx`, `Docs.jsx` + i18n
+  `en/bg/es` (keys `integration.apiIntegration.flowStep2`, `docs.endpoints.getPaymentDetails`,
+  `integration.apiReference.getDetails`).
+- **merchant-dashboard** (rebuilt + redeployed): `ApiKeys.jsx` example URL → token.
+
 ## 🔜 TO DO
 
 ### GembaPay (owner) — remaining platform work
-1. **SDK + plugins** — no change needed for checkout (they already redirect to the returned `paymentUrl`). **Do**
-   move status polling off the public endpoint: `npm` SDK `getPaymentStatus()` and the WooCommerce plugin currently
-   call the public `GET /api/customer/payment/:orderId/status`; point them at the **authenticated**
+1. **SDK + plugins (code)** — no change needed for checkout (they already redirect to the returned `paymentUrl`).
+   **Do** move status polling off the public endpoint: `npm` SDK `getPaymentStatus()` and the WooCommerce plugin
+   currently call the public `GET /api/customer/payment/:orderId/status`; point them at the **authenticated**
    `GET /api/merchant/payment-status/:orderId` (API key). Ship a new SDK/plugin version.
-3. **Docs + landing page** — describe the current integration: build from the returned `paymentUrl` (never construct
-   `/checkout/{orderId}` yourself); use the authed endpoints for order detail / status. *(Phase C — in progress.)*
-4. **Notify merchants** of the transition + a retirement date for legacy orderId public lookups.
-5. **Retire the legacy branch (final, closes enumeration):** after the transition window, remove the `orderId`
+2. **Notify merchants** of the transition + a retirement date for legacy orderId public lookups.
+3. **Retire the legacy branch (final, closes enumeration):** after the transition window, remove the `orderId`
    fallback from the `router.param` resolvers (customer + euro) so the public endpoints accept **only** the token →
    guessing an orderId returns nothing.
-6. *(minor)* PayPal `return_url` (`/api/paypal/return/:orderId`, a backend callback) and the dead
+4. *(minor)* PayPal `return_url` (`/api/paypal/return/:orderId`, a backend callback) and the dead
    `merchant.controller.js` URL builder still use orderId — switch when convenient.
 
 ### What each merchant must do after the change

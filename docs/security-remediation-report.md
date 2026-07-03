@@ -166,10 +166,16 @@ All of the below are **live and verified**. Severity uses the original audit's s
 
 ### B1 — orderId is a guessable public access key to order data + customer PII  ·  severity 🟡 MEDIUM (only real residual attack)
 
-> **2026-07-03 partial update:** the **customer-PII portion is now CLOSED** on the `/api/customer/*` endpoints —
-> `customerEmail` was removed from the public responses (see POST-MEGA-AUDIT). The `/api/euro/payment/:orderId`
-> handler below **still returns `customerEmail`** (not yet migrated) and, on both euro + customer endpoints, the
-> **guessable-orderId enumeration of order metadata** (amount/description/status) remains until the token migration.
+> **2026-07-03 update — token migration Phase 1 SHIPPED for the `/api/customer/*` + `/checkout/` flow.** An
+> unguessable `access_token` (uuid) now backs every payment request (`payment_requests.access_token`, NOT NULL /
+> UNIQUE / default `gen_random_uuid()`, all 587 rows backfilled; migration `20260703110000`). New checkout URLs
+> (`paymentUrl`, payment-link `checkoutPath`, Stripe/PayPal `success_url`+`cancel_url`) carry the **token**; a
+> `router.param('orderId')` resolver on `customer.routes` accepts the token OR (still, during transition) the legacy
+> orderId. Authenticated merchant endpoints keep orderId (safe — scoped). The **customer-PII portion is CLOSED**
+> (`customerEmail` removed from the public responses — see POST-MEGA-AUDIT). **Still pending** (see
+> `b1-orderid-token-migration.md`): the **euro** endpoint below (`/api/euro/payment/:orderId`) still keys on orderId
+> and **still returns `customerEmail`**; and the final **enumeration close** = retiring the legacy-orderId branch from
+> the resolvers after the merchant transition window.
 
 - **Recognise it:** `GET /api/euro/payment/:orderId` (`routes/euro.routes.js:270`) is **PUBLIC** (no auth) and its
   `res.json` (line ~319–353) returns `amount, description, status, txHash, merchantName`, **and `customerEmail`**.

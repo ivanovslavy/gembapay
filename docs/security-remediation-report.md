@@ -351,3 +351,18 @@ All of the below are **live and verified**. Severity uses the original audit's s
 5. **B5 (RPC), B6 (KMS), B8 (dashboard CSP)** — larger/infra/separate-codebase projects.
 
 *Everything in Part A is live and verified. Nothing in Part B is a money-theft vector.*
+
+
+---
+
+## POST-MEGA-AUDIT (2026-07-03) — FIXED (owner-authorized): customer.routes.js /payment/:orderId merchant-secret leak (re-opened H6/B1)
+
+The multi-agent mega-audit confirmed a LIVE unauthenticated leak that yesterday's H6/B1 assessment wrongly cleared.
+
+- Endpoint: GET /api/customer/payment/:orderId (src/routes/customer.routes.js ~line 111), public/no-auth. Sibling GET /payment/:orderId/status (~line 194) over-returned PII similarly.
+- Bug: handler did findUnique with include:{merchant:true} then res.json({ ...paymentRequest }). The spread serialized the FULL Merchant row: passwordHash, webhookSecret, totpSecret, twoFactorBackupCodes, stripeAccountId, paypalMerchantId + KYC/PII, plus the order's customerEmail/metadata. Any orderId (shared checkout links / GK-derived) reached any merchant's secrets. Confirmed live (HTTP 200 with a real bcrypt passwordHash + webhookSecret; values not recorded).
+- Why yesterday missed it: H6 (~line 213) and B1 (~line 168) verified /api/euro/payment/:orderId (euro.routes.js, explicit named fields, only merchantName, safe) and generalised "not a live leak". The customer.routes.js sibling with the ...paymentRequest spread was never checked. Same class as H6/B1, but a distinct un-verified endpoint; the earlier "safe" call was wrong.
+- Impact: leaked webhookSecret enables forging HMAC-signed webhooks GembaKitchen billing trusts (free subscriptions); totpSecret/backup codes defeat 2FA; passwordHash enables offline cracking.
+- FIX APPLIED + verified: narrowed the merchant include to non-secret checkout fields only (select companyName/legalName/websiteUrl) and stripped customer PII (customerEmail) from the spread. KEEP metadata (Success.jsx reads metadata.viaPaymentLink) and the top-level merchantAddress (on-chain, Checkout.jsx). Same PII strip on /status. Verified: renders 200, merchant has only companyName/legalName/websiteUrl, NO secrets, checkout + crypto intact. Bonus: the fix also populates merchantName, which was always null because the code read non-existent merchant.businessName/merchant.name (real field is companyName).
+- REMAINING OWNER ACTION: ROTATE any merchant webhookSecret/passwordHash/totpSecret readable during the exposure window (webhookSecret must be updated in both the GembaPay Merchant row AND the merchant app .env, e.g. GembaKitchen GEMBAPAY_WEBHOOK_SECRET).
+- Severity: CRITICAL (unauthenticated cross-tenant merchant-secret disclosure).

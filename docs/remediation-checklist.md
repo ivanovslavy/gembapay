@@ -28,7 +28,13 @@ owner policy; only docs + contracts + plugins live in this repo). Workflow per f
   [x] **H4 unit-file perms** (all `gembapay-*.service` → root:root 644; daemon-reload; services stayed active) · [x] **H5 deps** (`npm audit fix` safe/semver → **19 of 20 fixed incl. both
   critical**; app restarted clean, **owner-tested: all 3 payments + webhooks work**. Remaining: nodemailer 1 high
   needs `--force` major bump → deferred, needs email-flow test) ·
-  [ ] H6 secret over-fetch · [x] **H7 raw-SQL admin** (schema route SQLi → parameterized `$queryRaw`; `/db/query`
+  [x] **H6 secret over-fetch — CRITICAL sub-case FIXED 2026-07-03** (the public `/api/customer/payment/:orderId` +
+  `/status` leaked the FULL merchant row incl. `webhookSecret`/`passwordHash`/`totpSecret`/`apiKey` + `customerEmail`
+  via a `...paymentRequest` spread → replaced with a positive Prisma `select` allowlist; added authed ownership-scoped
+  `GET /api/merchant/payment/:orderId` + `/payment-status/:orderId` so merchants keep access to their own full data.
+  **E2E-verified: 0 secrets/PII on the public endpoints, safe fields intact, authed route 401 without key.** Owner
+  action: ROTATE exposed secrets. Remaining owner-facing over-fetch [auth.routes webhookSecret to the owner + paypal
+  apiKey-fragment log] = 🟢 LOW, still open) · [x] **H7 raw-SQL admin** (schema route SQLi → parameterized `$queryRaw`; `/db/query`
   denylist still needs a read-only DB role — noted) · [x] **H8 cmd-injection** (`generate-monthly` `month` → strict
   `YYYY-MM` validation) · [x] **H9 amount-verify** (main quote/USD handler: paid < requested×0.90 → `underpaid`,
   not completed, no webhook; **owner-tested: normal crypto payment completes + webhook arrives**. Euro/direct

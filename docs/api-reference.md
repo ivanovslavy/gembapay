@@ -124,6 +124,55 @@ Creates a new payment request for a customer.
 
 ---
 
+### Get Order Detail (Authenticated)
+
+Full order record for one of **your** orders, including customer email and metadata. Requires your API key
+(`Authorization: Bearer <key>`); only returns orders that belong to your merchant account (404 otherwise). Use this
+instead of the public `GET /api/customer/payment/:orderId`, which deliberately omits customer email and secrets.
+
+**Endpoint:** `GET /api/merchant/payment/:orderId`
+
+```bash
+curl https://api.gembapay.com/api/merchant/payment/ORDER-12345 \
+  -H "Authorization: Bearer gembapay_live_..."
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "order": {
+    "orderId": "ORDER-12345",
+    "status": "completed",
+    "amountUsd": "108.70",
+    "amountOriginal": "100.00",
+    "currency": "USD",
+    "currencyOriginal": "EUR",
+    "description": "Product purchase",
+    "customerEmail": "buyer@example.com",
+    "metadata": { "viaPaymentLink": true },
+    "network": "bsc",
+    "paymentMode": "crypto",
+    "merchantAddress": "0x...",
+    "isTestMode": false,
+    "createdAt": "2026-01-25T12:00:00.000Z",
+    "completedAt": "2026-01-25T12:05:00.000Z",
+    "expiresAt": "2026-01-25T13:00:00.000Z",
+    "payment": {
+      "txHash": "0x...",
+      "blockNumber": "45123456",
+      "status": "confirmed",
+      "confirmedAt": "2026-01-25T12:05:00.000Z"
+    }
+  }
+}
+```
+
+**Status-only variant:** `GET /api/merchant/payment-status/:orderId` (same auth + ownership scoping) returns
+`{ success, orderId, status, amountUsd, network, completedAt, isTestMode }`.
+
+---
+
 ## Payment Links
 
 Payment Links let a merchant accept a payment without integrating the API — a shareable hosted page with a QR code, created and managed from the Merchant Dashboard (Dashboard → Payment Links). A link can be **single-use** (closes after one payment) or **multi-use** (reusable, e.g. for donations, with optional usage and total-amount limits). The merchant configures the amount (a fixed amount, or an **open amount** where the payer chooses how much to pay — "pay what you want", ideal for donations), currency, accepted methods, expiry, which customer fields to collect (or none), Test/Live mode, and email notifications.
@@ -571,6 +620,12 @@ Cancellation is **cancel-at-period-end**: the subscription stays active until `c
 ## Customer Endpoints
 
 These endpoints are used by the payment page to process customer payments. No authentication required.
+
+> **Security note (2026-07-03):** the public customer endpoints return **only non-sensitive checkout data**. They do
+> **not** return the customer's email, merchant secrets, or internal IDs. If your integration needs the full order
+> record (including `customerEmail`), use the **authenticated** merchant endpoint
+> [`GET /api/merchant/payment/:orderId`](#get-order-detail-authenticated) with your API key — it returns the full
+> order, scoped to orders that belong to your account.
 
 ### Get Payment Details
 

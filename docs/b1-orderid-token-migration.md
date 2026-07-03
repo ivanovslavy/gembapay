@@ -46,13 +46,20 @@ email." Applied consistently across:
   `integration.apiReference.getDetails`).
 - **merchant-dashboard** (rebuilt + redeployed): `ApiKeys.jsx` example URL → token.
 
+## ✅ DONE — Phase 4 (SDK + WooCommerce moved to authed endpoints, 2026-07-03)
+
+- **npm SDK bumped to v1.1.0** (`packages/npm`): `getPayment()` → authed `GET /api/merchant/payment/:orderId`
+  (returns the full order incl. `customerEmail`, ownership-scoped; unwrapped from `{order}`); `getPaymentStatus()`
+  → authed `GET /api/merchant/payment-status/:orderId`. E2E-verified against production with a live key: own order
+  200 (customerEmail present), foreign order 404. **Owner still to do: `npm publish` the new version.**
+- **WooCommerce plugin** (`packages/woocommerce`): `get_payment` / `get_payment_status` point at the same authed
+  endpoints. (These methods were unused — the plugin is webhook-driven — so this is correctness, not a functional
+  fix; no plugin re-release urgency.)
+
 ## 🔜 TO DO
 
 ### GembaPay (owner) — remaining platform work
-1. **SDK + plugins (code)** — no change needed for checkout (they already redirect to the returned `paymentUrl`).
-   **Do** move status polling off the public endpoint: `npm` SDK `getPaymentStatus()` and the WooCommerce plugin
-   currently call the public `GET /api/customer/payment/:orderId/status`; point them at the **authenticated**
-   `GET /api/merchant/payment-status/:orderId` (API key). Ship a new SDK/plugin version.
+1. **Publish** the npm SDK v1.1.0 (`npm publish`); optionally re-release the WooCommerce plugin.
 2. **Notify merchants** of the transition + a retirement date for legacy orderId public lookups.
 3. **Retire the legacy branch (final, closes enumeration):** after the transition window, remove the `orderId`
    fallback from the `router.param` resolvers (customer + euro) so the public endpoints accept **only** the token →

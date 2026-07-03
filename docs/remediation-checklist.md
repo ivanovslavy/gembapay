@@ -101,7 +101,13 @@ clickjacking-scope (Shopify embed), orderId→token (BREAKING checkout), 0.0.0.0
   [x] **KYC signed-URL TTL** (3600→900s, 15 min) ·
   [~] `r2://` leak (private bucket, low-sensitivity — marginal) · [x] dead wallet-bearer route (searched — not present) ·
   [~] blog `dangerouslySetInnerHTML` (frontend, not backend) · [~] web3 nonce (crypto → together) · [~] DB DDL (needs read-only role — owner) ·
-  [ ] latent JWT fallback fail-closed · [ ] latent webhook fail-open → fail-closed.
+  [x] **latent JWT fallback fail-closed** (2026-07-03 — removed the `'your-secret-key-change-this'` fallback in
+  `auth.service.js` + `twofa.service.js`; now throws at startup if `JWT_SECRET` is unset/placeholder. JWT_SECRET is
+  set in prod → zero runtime change; verified service starts + login works) ·
+  [x] **latent webhook fail-open → fail-closed** (2026-07-03 — Stripe `handleWebhook` else-branch and PayPal
+  `handleWebhook` now THROW instead of processing an unverified webhook when the secret/ID is missing; both are set in
+  prod → zero runtime change; verified bad-signature webhook → 400) ·
+  [x] **paypal apiKey log fragment removed** (`paypal.routes.js` no longer logs `merchant.apiKey.substring(0,15)`).
 
 ---
 

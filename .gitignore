@@ -14,3 +14,11 @@ CLAUDE.md
 claude.md
 progress.md
 PROGRESS.md
+
+# Sensitive internal docs (security audit / remediation / migration) - keep OUT of repo
+docs/b1-orderid-token-migration.md
+docs/listener-changes-2026-07-03.md
+docs/remediation-checklist.md
+docs/security-audit-2026-07-02.md
+docs/security-remediation-report.md
+docs/subscription-integration-changelog.md

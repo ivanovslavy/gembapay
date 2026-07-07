@@ -203,7 +203,7 @@ Each link is hosted at `https://payment.gembapay.com/link/<token>`. See the [API
 
 ## Subscriptions
 
-Charge customers automatically on a recurring schedule. Merchants create subscription **Plans** in the dashboard (name, price in EUR, billing interval, accepted methods); each plan gets a hosted subscribe link and an embeddable button to add to the merchant's own website. A customer enters their email, pays once, and an auto-recurring subscription begins.
+Charge customers automatically on a recurring schedule. Merchants create subscription **Plans** programmatically via the API (name, price in EUR, billing interval, accepted methods); each plan gets a hosted subscribe link and an embeddable button to add to the merchant's own website. A customer enters their email, pays once, and an auto-recurring subscription begins.
 
 Recurring billing is powered by the **native subscription engines of Stripe and PayPal**, which auto-charge each cycle and handle retries and dunning. **Crypto subscriptions are not supported** — a wallet cannot be auto-charged without on-chain authorization for each charge.
 

@@ -6,6 +6,12 @@
 
 ## Documentation Index
 
+### Announcements
+
+| Document | Description |
+|----------|-------------|
+| [Mainnet Crypto Payments Suspended (2026-07-09)](mainnet-crypto-suspension-2026-07-09.md) | CASP/MiCA licensing — mainnet paused, testnets unaffected |
+
 ### Getting Started
 
 | Document | Description |

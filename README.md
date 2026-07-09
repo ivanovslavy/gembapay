@@ -222,6 +222,7 @@ See the [API Reference](docs/api-reference.md#subscriptions) and the [Integratio
 
 | Document | Description |
 |----------|-------------|
+| [Mainnet Crypto Payments Suspended (2026-07-09)](docs/mainnet-crypto-suspension-2026-07-09.md) | CASP/MiCA licensing — mainnet paused, testnets unaffected |
 | [API Reference](docs/api-reference.md) | REST API endpoints and authentication |
 | [Integration Guide](docs/integration.md) | Step-by-step integration instructions |
 | [WordPress Plugin](docs/wordpress-plugin.md) | WooCommerce installation and configuration |

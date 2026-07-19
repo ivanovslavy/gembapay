@@ -267,7 +267,7 @@ The customer is then taken to `https://payment.gembapay.com{checkoutPath}` and c
 
 Subscriptions let a merchant bill customers automatically on a recurring schedule. A merchant creates **plans** (price, billing interval, accepted methods); each plan exposes a hosted subscribe link and an embeddable button. Recurring charges are executed by the **native subscription engines of Stripe and PayPal** — crypto subscriptions are not supported.
 
-Plan management endpoints require **merchant authentication** — an **API key** (for programmatic provisioning, recommended) or a dashboard JWT. The subscribe and manage flows used by the hosted pages are **public** (no authentication). Each successful billing cycle is recorded in the merchant's transactions and triggers the merchant's `payment.completed` webhook (see [Webhooks](webhooks.md#subscription-events)).
+Plan management endpoints require **merchant authentication** — an **API key** (for programmatic provisioning, recommended) or a dashboard JWT. The subscribe and manage flows used by the hosted pages are **public** (no authentication). Each successful billing cycle is recorded in the merchant's transactions and triggers the merchant's `subscription.payment` webhook — subscriptions use dedicated `subscription.*` events with a flat payload (no `orderId`), not `payment.completed` (see [Webhooks](webhooks.md#subscription-events)).
 
 ### Create a Plan
 
@@ -768,6 +768,11 @@ These endpoints require API Key authentication.
 
 **Endpoint:** `GET /api/merchant/transactions`
 
+> **Auth note:** unlike the other merchant endpoints, this one currently requires a **dashboard
+> (JWT) session**, not an API key — an API-key request returns `401`. Use `GET /api/merchant/stats`
+> and `GET /api/merchant/payment-status/:orderId` (both API-key) for programmatic access, or view
+> transactions in the dashboard.
+
 **Query Parameters:**
 
 | Parameter | Type | Default | Description |
@@ -987,7 +992,7 @@ GembaPay sends webhook notifications for payment events.
 ```
 Content-Type: application/json
 X-GembaPay-Event: payment.completed
-X-GembaPay-Signature: sha256=...
+X-GembaPay-Signature: <bare HMAC-SHA256 hex, 64 chars, no "sha256=" prefix>
 X-GembaPay-Merchant-Id: your-merchant-id
 X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
 ```
@@ -1034,19 +1039,17 @@ X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
 
 ### Signature Verification
 
+HMAC-SHA256, **bare hex (no `sha256=` prefix)**, over the **raw request body**. Full guide + Python/PHP: [webhooks.md](webhooks.md).
+
 ```javascript
 const crypto = require('crypto');
 
-function verifyWebhook(payload, signature, secret) {
-  const expectedSignature = 'sha256=' + crypto
-    .createHmac('sha256', secret)
-    .update(JSON.stringify(payload))
-    .digest('hex');
-  
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  );
+// rawBody = the exact bytes received (Buffer/string), NOT JSON.stringify(parsedBody)
+function verifyWebhook(rawBody, signature, secret) {
+  const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+  const a = Buffer.from(signature || '', 'utf8');
+  const b = Buffer.from(expected, 'utf8');
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 ```
 
@@ -1054,9 +1057,14 @@ function verifyWebhook(payload, signature, secret) {
 
 | Event | Description |
 |-------|-------------|
-| payment.completed | Payment successfully processed |
-| payment.failed | Payment failed |
-| payment.expired | Payment request expired |
+| payment.completed | A one-off payment was processed (stripe / paypal / crypto) |
+| subscription.activated | A subscription became active |
+| subscription.payment | A recurring subscription cycle was paid |
+| subscription.payment_failed | A subscription cycle charge failed |
+| subscription.canceled | A subscription was cancelled |
+
+> `payment.failed` / `payment.expired` are **not currently emitted**. Subscription events use a
+> flat payload with **no `orderId`** (see [webhooks.md](webhooks.md#subscription-events)).
 
 See [Webhooks Documentation](webhooks.md) for detailed information.
 

@@ -1,6 +1,6 @@
 {
   "name": "gembapay",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "GembaPay — Unified payment gateway for crypto (ETH, BNB, POL, USDC, USDT), Stripe, and PayPal. Non-custodial payments.",
   "main": "src/index.js",
   "types": "src/index.d.ts",

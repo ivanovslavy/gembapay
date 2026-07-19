@@ -528,36 +528,39 @@ const crypto = require('crypto');
 const express = require('express');
 const app = express();
 
-app.post('/webhooks/gembapay', express.json(), async (req, res) => {
-  // 1. Verify signature
-  const signature = req.headers['x-gembapay-signature'];
-  const payload = JSON.stringify(req.body);
-  
-  const expected = 'sha256=' + crypto
+// Use express.raw so the signed bytes are preserved (see docs/webhooks.md).
+app.post('/webhooks/gembapay', express.raw({ type: 'application/json' }), async (req, res) => {
+  // 1. Verify signature — BARE hex (no "sha256=" prefix) over the RAW body.
+  const signature = req.headers['x-gembapay-signature'] || '';
+  const expected = crypto
     .createHmac('sha256', process.env.WEBHOOK_SECRET)
-    .update(payload)
+    .update(req.body)                 // req.body is a Buffer of the raw bytes
     .digest('hex');
-
-  if (signature !== expected) {
+  const a = Buffer.from(signature, 'utf8');
+  const b = Buffer.from(expected, 'utf8');
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
     console.error('Invalid webhook signature');
     return res.status(401).send('Invalid signature');
   }
 
   // 2. Process event
-  const { event, payment } = req.body;
-
-  console.log(`Webhook received: ${event} for order ${payment.orderId}`);
+  const body = JSON.parse(req.body.toString('utf8'));
+  const { event, payment } = body;
 
   switch (event) {
     case 'payment.completed':
-      await handlePaymentCompleted(payment);
+      await handlePaymentCompleted(payment);       // one-off: stripe / paypal / crypto
       break;
-    case 'payment.failed':
-      await handlePaymentFailed(payment);
+    case 'subscription.payment':
+      await recordSubscriptionCycle(body);         // flat payload, no orderId → use body.eventId
       break;
-    case 'payment.expired':
-      await handlePaymentExpired(payment);
+    case 'subscription.activated':
+    case 'subscription.canceled':
+    case 'subscription.payment_failed':
+      await updateSubscriptionState(body);
       break;
+    case 'webhook.test':
+      break;                                       // dashboard connectivity check
     default:
       console.log('Unknown event:', event);
   }
@@ -567,38 +570,13 @@ app.post('/webhooks/gembapay', express.json(), async (req, res) => {
 });
 
 async function handlePaymentCompleted(payment) {
-  // Update order in database
   await db.orders.update(
     { orderId: payment.orderId },
-    { 
-      status: 'paid',
-      txHash: payment.txHash,
-      network: payment.network,
-      paymentProvider: payment.paymentProvider,
-      usdAmount: payment.usdAmount,
-      paidAt: new Date()
-    }
+    { status: 'paid', txHash: payment.txHash, network: payment.network,
+      paymentProvider: payment.paymentProvider, usdAmount: payment.usdAmount, paidAt: new Date() }
   );
-
-  // Fulfill order
   await fulfillOrder(payment.orderId);
-  
-  // Send confirmation email
   await sendConfirmationEmail(payment.orderId);
-}
-
-async function handlePaymentFailed(payment) {
-  await db.orders.update(
-    { orderId: payment.orderId },
-    { status: 'failed', failureReason: payment.failureReason }
-  );
-}
-
-async function handlePaymentExpired(payment) {
-  await db.orders.update(
-    { orderId: payment.orderId },
-    { status: 'expired' }
-  );
 }
 
 app.listen(3000);
@@ -609,7 +587,7 @@ app.listen(3000);
 ```
 Content-Type: application/json
 X-GembaPay-Event: payment.completed
-X-GembaPay-Signature: sha256=abc123...
+X-GembaPay-Signature: 9f8b2c1a...   (bare HMAC-SHA256 hex, no "sha256=" prefix)
 X-GembaPay-Merchant-Id: your-merchant-id
 X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
 ```
@@ -681,22 +659,24 @@ X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
 
 | Event | Description |
 |-------|-------------|
-| `payment.completed` | Payment successfully processed |
-| `payment.failed` | Payment failed |
-| `payment.expired` | Payment request expired (24h) |
+| `payment.completed` | A one-off payment was processed (stripe / paypal / crypto) |
+| `subscription.activated` | A subscription became active |
+| `subscription.payment` | A recurring subscription cycle was paid |
+| `subscription.payment_failed` | A subscription cycle charge failed |
+| `subscription.canceled` | A subscription was cancelled |
+
+> `payment.failed` / `payment.expired` are **not currently emitted**. Subscription events use a
+> flat payload with **no `orderId`** (idempotency key = `eventId`). See `docs/webhooks.md`.
 
 ### Retry Policy
 
-If your endpoint fails (non-2xx response), GembaPay retries:
+If your endpoint fails (non-2xx response), GembaPay retries in two phases:
 
-| Attempt | Delay |
-|---------|-------|
-| 1 | Immediate |
-| 2 | 2 seconds |
-| 3 | 4 seconds |
-| 4 | 8 seconds |
+1. **Immediate:** 3 attempts, with a 2s then 4s pause between them.
+2. **Extended:** if all 3 fail, the delivery is retried **hourly for up to 72 hours** (reminder
+   email after 24h), then marked `exhausted`.
 
-**Total:** 4 attempts | **Timeout:** 15 seconds per attempt
+**Timeout:** 15 seconds per attempt. Manual retry available from the dashboard.
 
 ---
 
@@ -1154,7 +1134,7 @@ if (existing) return res.status(200).json({ received: true }); // Already proces
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/merchant/payment-request` | Create payment request |
-| GET | `/api/merchant/transactions` | List transactions |
+| GET | `/api/merchant/transactions` | List transactions (**dashboard/JWT auth only — not API key**) |
 | GET | `/api/merchant/stats` | Get statistics |
 | PUT | `/api/merchant/webhook` | Configure webhook |
 | POST | `/api/merchant/apikeys` | Create API key |

@@ -4,7 +4,7 @@ const https = require('https');
 const crypto = require('crypto');
 
 const BASE_URL = 'https://api.gembapay.com';
-const VERSION = '1.1.0';
+const VERSION = '1.1.1';
 
 class GembaPayError extends Error {
   constructor(message, statusCode, code) {
@@ -114,16 +114,21 @@ class GembaPay {
       throw new GembaPayError('webhookSecret is required for signature verification', null, 'missing_webhook_secret');
     }
 
-    const body = typeof payload === 'string' ? payload : JSON.stringify(payload);
-    const expected = 'sha256=' + crypto
+    // `payload` must be the RAW request body (string or Buffer) — the exact bytes GembaPay
+    // signed. If an already-parsed object is passed, we best-effort re-serialize (less reliable;
+    // mount the webhook route with express.raw and pass the raw body instead).
+    const body = Buffer.isBuffer(payload) || typeof payload === 'string'
+      ? payload
+      : JSON.stringify(payload);
+    const expected = crypto
       .createHmac('sha256', this.webhookSecret)
       .update(body)
-      .digest('hex');
+      .digest('hex'); // bare hex — GembaPay does NOT prefix with "sha256="
 
-    return crypto.timingSafeEqual(
-      Buffer.from(signature || ''),
-      Buffer.from(expected)
-    );
+    const a = Buffer.from(signature || '', 'utf8');
+    const b = Buffer.from(expected, 'utf8');
+    // Length-guard first: timingSafeEqual throws on unequal-length buffers.
+    return a.length === b.length && crypto.timingSafeEqual(a, b);
   }
 
   /**
@@ -133,13 +138,17 @@ class GembaPay {
    */
   parseWebhook(req) {
     const signature = req.headers['x-gembapay-signature'];
-    const body = req.body;
+    // Prefer the RAW body — mount the route with express.raw({ type: 'application/json' }).
+    // Falls back to req.rawBody, then a re-serialized parsed body (least reliable).
+    const raw = Buffer.isBuffer(req.body) ? req.body
+      : (req.rawBody != null ? req.rawBody
+        : (typeof req.body === 'string' ? req.body : JSON.stringify(req.body)));
 
-    if (!this.verifyWebhook(body, signature)) {
+    if (!this.verifyWebhook(raw, signature)) {
       throw new GembaPayError('Invalid webhook signature', 401, 'invalid_signature');
     }
 
-    return body;
+    return (Buffer.isBuffer(raw) || typeof raw === 'string') ? JSON.parse(raw.toString('utf8')) : raw;
   }
 
   // ── Express Middleware ────────────────────────────────

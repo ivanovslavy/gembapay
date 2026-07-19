@@ -4,7 +4,7 @@ Tags: woocommerce, payment gateway, crypto, stripe, paypal
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -115,6 +115,12 @@ Yes! GembaPay uses industry-standard security practices. Crypto payments use aud
 4. Order details with transaction info
 
 == Changelog ==
+
+= 1.1.1 =
+* Fixed webhook signature verification to match GembaPay's signing exactly: the
+  signature is a bare HMAC-SHA256 hex string (no "sha256=" prefix) over the raw
+  request body. Previous versions prepended "sha256=" and rejected valid webhooks.
+  Update to 1.1.1 so order-paid webhooks are accepted.
 
 = 1.1.0 =
 * Order detail / status lookups now use the authenticated merchant API endpoints

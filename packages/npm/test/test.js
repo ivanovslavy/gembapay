@@ -20,7 +20,7 @@ console.log('✓ Test mode:', client.isTestMode);
 // Test: webhook verification
 const crypto = require('crypto');
 const payload = JSON.stringify({ event: 'payment.completed', payment: { orderId: 'TEST-1' } });
-const sig = 'sha256=' + crypto.createHmac('sha256', 'test_secret').update(payload).digest('hex');
+const sig = crypto.createHmac('sha256', 'test_secret').update(payload).digest('hex');
 
 try {
   const valid = client.verifyWebhook(payload, sig);

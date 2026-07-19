@@ -212,7 +212,7 @@ Recurring billing is powered by the **native subscription engines of Stripe and 
 - **Upgrades / downgrades** — upgrades take effect immediately (Stripe prorates the difference for the current cycle, then bills the full new price next renewal; PayPal cancels and replaces the plan with a catch-up charge). Downgrades take effect at the next renewal, with no refund for the current period.
 - **Cancellation** — customers cancel anytime via the merchant's self-service Manage page: they enter their email, receive a 6-digit code by email, see their subscriptions with that merchant, and cancel. Cancellation is **cancel-at-period-end** (active until the paid period ends, then stops; no refund), and is **merchant-scoped** (the Manage link carries the merchant's token).
 - **Fee** — GembaPay charges **1% per billing cycle**, collected automatically via the Stripe application fee or PayPal platform fee. EUR base currency.
-- **Records & webhooks** — each paid cycle is recorded in the merchant's Transactions and fires the merchant's `payment.completed` webhook.
+- **Records & webhooks** — each paid cycle is recorded in the merchant's Transactions and fires the merchant's `subscription.payment` webhook (subscriptions use dedicated `subscription.*` events with a flat payload, **not** `payment.completed` — see [Webhooks](docs/webhooks.md#subscription-events)).
 
 See the [API Reference](docs/api-reference.md#subscriptions) and the [Integration Guide](docs/integration.md#subscriptions-recurring-billing).
 

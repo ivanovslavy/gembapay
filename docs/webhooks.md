@@ -6,7 +6,12 @@
 
 ## Overview
 
-GembaPay sends webhook notifications to your server when payment events occur. Webhooks allow you to automate order fulfillment and keep your system synchronized with payment status. All payment methods (Crypto, Stripe, PayPal) use the same webhook format.
+GembaPay sends webhook notifications to your server when payment events occur. Webhooks allow you to automate order fulfillment and keep your system synchronized with payment status. All payment methods (Stripe, PayPal, and — where enabled — crypto) use the same webhook format.
+
+> **Signature format (read first):** GembaPay signs each webhook with **HMAC-SHA256 as a bare
+> hex string** (no `sha256=` prefix) in the `X-GembaPay-Signature` header, computed over the
+> **raw request body bytes**. Verify against the raw body, not a re-serialized copy. All examples
+> below use this exact scheme.
 
 ---
 
@@ -47,11 +52,18 @@ A webhook secret is automatically generated when you set your webhook URL. Use t
 
 | Event | Description |
 |-------|-------------|
-| `payment.completed` | Payment successfully processed (also fired for each paid subscription cycle) |
-| `payment.failed` | Payment failed |
-| `payment.expired` | Payment request expired |
+| `payment.completed` | A one-off payment was successfully processed (Stripe, PayPal, or crypto) |
+| `subscription.activated` | A subscription became active |
+| `subscription.payment` | A recurring subscription cycle was paid |
+| `subscription.payment_failed` | A subscription cycle charge failed |
+| `subscription.canceled` | A subscription was cancelled |
 
-> **Subscriptions:** GembaPay does not introduce new outbound event types for subscriptions. Each successful recurring billing cycle fires a standard **`payment.completed`** webhook to your endpoint. See [Subscription Events](#subscription-events).
+> **Subscriptions fire their OWN event types** (`subscription.*`), **not** `payment.completed`, and
+> their payload has a different shape (see [Subscription Events](#subscription-events)). If you sell
+> subscriptions, handle those events explicitly.
+>
+> `webhook.test` is also sent when you press **Test Webhook** in the dashboard; treat it as a
+> connectivity check, not a real payment.
 
 ---
 
@@ -64,7 +76,7 @@ POST /your-webhook-endpoint HTTP/1.1
 Host: yoursite.com
 Content-Type: application/json
 X-GembaPay-Event: payment.completed
-X-GembaPay-Signature: sha256=abc123...
+X-GembaPay-Signature: 9f8b2c1a...   (bare HMAC-SHA256 hex, 64 chars, NO "sha256=" prefix)
 X-GembaPay-Merchant-Id: your-merchant-id
 X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
 ```
@@ -156,93 +168,55 @@ X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
 > Verify payments against `amountOriginal` + `currencyOriginal` (what you asked for), not
 > only `usdAmount`.
 
-### payment.failed
-
-```json
-{
-  "event": "payment.failed",
-  "payment": {
-    "orderId": "ORDER-12345",
-    "status": "failed",
-    "failureReason": "insufficient_funds",
-    "network": "stripe",
-    "paymentProvider": "stripe",
-    "failedAt": "2026-01-25T08:15:05.193Z"
-  },
-  "timestamp": "2026-01-25T08:15:05.193Z"
-}
-```
-
-### payment.expired
-
-```json
-{
-  "event": "payment.expired",
-  "payment": {
-    "orderId": "ORDER-12345",
-    "status": "expired",
-    "expiredAt": "2026-01-25T08:15:05.193Z"
-  },
-  "timestamp": "2026-01-25T08:15:05.193Z"
-}
-```
+> **Note:** `payment.failed` and `payment.expired` are **not currently emitted** by GembaPay.
+> Do not build fulfilment logic around them; rely on `payment.completed` (success) and, for
+> subscriptions, the `subscription.*` events below.
 
 ---
 
 ## Subscription Events
 
-Subscriptions are billed recurringly through the **native subscription engines of Stripe and PayPal**. GembaPay receives the provider-side subscription events, reconciles them, and notifies merchants through the **same `payment.completed` webhook** used for one-off payments — you do not need to handle a separate set of subscription event types.
+Subscriptions are billed recurringly through the **native subscription engines of Stripe and PayPal**. GembaPay receives the provider-side subscription events, reconciles them, and notifies your endpoint through **dedicated `subscription.*` events with their own payload shape** — these are **not** `payment.completed` and do **not** carry a `payment` wrapper or an `orderId`.
 
-### Provider events GembaPay consumes (internal)
+### Subscription events GembaPay sends to your endpoint
 
-GembaPay listens to and processes the following provider webhooks. Handling is **idempotent** (duplicate deliveries are de-duplicated), so a provider re-sending an event never double-records a cycle or double-fires your webhook.
+| Event | When |
+|-------|------|
+| `subscription.activated` | A subscription became active |
+| `subscription.payment` | A recurring billing cycle was paid |
+| `subscription.payment_failed` | A cycle charge failed |
+| `subscription.canceled` | The subscription was cancelled |
 
-**Stripe:**
-
-| Stripe event | What it means |
-|--------------|---------------|
-| `customer.subscription.created` | A new subscription started |
-| `customer.subscription.updated` | Plan/quantity/status changed (e.g. upgrade, downgrade scheduled) |
-| `customer.subscription.deleted` | Subscription ended/cancelled |
-| `invoice.paid` | A billing cycle was paid → recorded + your `payment.completed` fires |
-| `invoice.payment_failed` | A cycle charge failed (Stripe retries / dunning) |
-
-**PayPal:**
-
-| PayPal event | What it means |
-|--------------|---------------|
-| `BILLING.SUBSCRIPTION.ACTIVATED` | A new subscription became active |
-| `BILLING.SUBSCRIPTION.UPDATED` | Subscription changed |
-| `BILLING.SUBSCRIPTION.CANCELLED` | Subscription cancelled |
-| `BILLING.SUBSCRIPTION.SUSPENDED` | Subscription suspended (e.g. failed payments) |
-| `PAYMENT.SALE.COMPLETED` | A billing cycle was paid → recorded + your `payment.completed` fires |
-
-> These are inbound provider events that GembaPay handles for you. As a merchant you only need to handle the **`payment.completed`** webhook you receive from GembaPay.
-
-### What your endpoint receives per cycle
-
-Each paid subscription cycle is recorded in your Transactions and delivered to your webhook as a standard `payment.completed` event. The payment method (`stripe` or `paypal`) appears in `network` / `paymentProvider`, and the subscriber's email in `customerAddress`, exactly as for a one-off Stripe/PayPal payment:
+### Subscription payload (flat — no `payment` wrapper, no `orderId`)
 
 ```json
 {
-  "event": "payment.completed",
-  "payment": {
-    "orderId": "SUB-7c1d8e2f-0001",
-    "amount": 19.99,
-    "usdAmount": 21.73,
-    "currency": "EUR",
-    "status": "completed",
-    "txHash": "in_1Pabc123...",
-    "network": "stripe",
-    "paymentProvider": "stripe",
-    "customerAddress": "jane@example.com",
-    "tokenAmount": 19.99
-  },
+  "event": "subscription.payment",
+  "eventId": "evt_9f8b2c1a...",
+  "subscriptionId": "sub_local_7c1d8e2f",
+  "providerSubscriptionId": "sub_1Pabc123...",
+  "planId": "plan_1a2b3c",
+  "planToken": "pln_9x8y7z",
+  "customerEmail": "jane@example.com",
+  "status": "active",
+  "amount": 19.99,
+  "currency": "EUR",
+  "isTestMode": false,
   "timestamp": "2026-06-29T10:00:05.193Z"
 }
 ```
 
-> The `orderId` for a subscription cycle identifies the subscription and the billing cycle. Treat it as the idempotency key (see [Implement Idempotency](#2-implement-idempotency)) so a re-delivered webhook fulfils the cycle only once.
+> **Idempotency:** use `eventId` (or `subscriptionId` + the cycle `timestamp`) as the idempotency
+> key so a re-delivered subscription webhook fulfils a cycle only once. There is **no** `orderId`
+> on subscription events.
+
+### Provider events GembaPay consumes (internal)
+
+For reference, GembaPay listens to and reconciles these provider-side webhooks; you never receive them directly. Handling is idempotent, so a provider re-sending an event never double-records a cycle or double-fires your webhook.
+
+**Stripe:** `customer.subscription.created` · `customer.subscription.updated` · `customer.subscription.deleted` · `invoice.paid` (→ your `subscription.payment`) · `invoice.payment_failed` (→ your `subscription.payment_failed`).
+
+**PayPal:** `BILLING.SUBSCRIPTION.ACTIVATED` (→ `subscription.activated`) · `BILLING.SUBSCRIPTION.UPDATED` · `BILLING.SUBSCRIPTION.CANCELLED` (→ `subscription.canceled`) · `BILLING.SUBSCRIPTION.SUSPENDED` · `PAYMENT.SALE.COMPLETED` (→ `subscription.payment`).
 
 ---
 
@@ -252,73 +226,65 @@ Always verify webhook signatures to ensure requests are from GembaPay.
 
 ### Node.js
 
+Sign/verify with **HMAC-SHA256 as bare hex (no `sha256=` prefix)** over the **raw request body**.
+
 ```javascript
 const crypto = require('crypto');
 
-function verifyWebhookSignature(payload, signature, secret) {
-  const expectedSignature = 'sha256=' + crypto
+// `rawBody` is the exact bytes received (a Buffer or string), NOT JSON.stringify(req.body).
+function verifyWebhookSignature(rawBody, signature, secret) {
+  const expected = crypto
     .createHmac('sha256', secret)
-    .update(JSON.stringify(payload))
-    .digest('hex');
-  
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  );
+    .update(rawBody)
+    .digest('hex');                        // bare hex — no "sha256=" prefix
+  const a = Buffer.from(signature || '', 'utf8');
+  const b = Buffer.from(expected, 'utf8');
+  return a.length === b.length && crypto.timingSafeEqual(a, b); // length-guard avoids a throw
 }
 
-// Express.js middleware
-app.post('/webhooks/gembapay', express.json(), (req, res) => {
-  const signature = req.headers['x-gembapay-signature'];
-  
-  if (!verifyWebhookSignature(req.body, signature, WEBHOOK_SECRET)) {
-    return res.status(401).send('Invalid signature');
-  }
-  
-  // Process webhook
-  const { event, payment } = req.body;
-  
-  if (event === 'payment.completed') {
-    console.log('Payment completed via:', payment.network);
-    // network: ethereum, bsc, polygon, stripe, or paypal
-    fulfillOrder(payment.orderId);
-  }
-  
-  res.status(200).send('OK');
-});
+// Express.js — capture the RAW body so the bytes match what GembaPay signed.
+app.post('/webhooks/gembapay',
+  express.raw({ type: 'application/json' }),
+  (req, res) => {
+    const signature = req.headers['x-gembapay-signature'];
+    if (!verifyWebhookSignature(req.body, signature, WEBHOOK_SECRET)) {
+      return res.status(401).send('Invalid signature');
+    }
+    const { event, payment } = JSON.parse(req.body.toString('utf8'));
+
+    if (event === 'payment.completed') {
+      fulfillOrder(payment.orderId);       // one-off payment (stripe / paypal / crypto)
+    } else if (event === 'subscription.payment') {
+      recordSubscriptionCycle(req.body);   // subscription cycle — no orderId, use eventId
+    }
+    res.status(200).send('OK');
+  });
 ```
 
 ### Python
 
 ```python
-import hmac
-import hashlib
-import json
+import hmac, hashlib, json
 
-def verify_webhook_signature(payload, signature, secret):
-    expected = 'sha256=' + hmac.new(
-        secret.encode(),
-        json.dumps(payload).encode(),
-        hashlib.sha256
-    ).hexdigest()
-    
-    return hmac.compare_digest(signature, expected)
+def verify_webhook_signature(raw_body: bytes, signature: str, secret: str) -> bool:
+    expected = hmac.new(secret.encode(), raw_body, hashlib.sha256).hexdigest()  # bare hex
+    return hmac.compare_digest(signature or '', expected)
 
-# Flask example
+# Flask example — use the RAW body (request.get_data()), not request.json,
+# so the bytes match what GembaPay signed.
 @app.route('/webhooks/gembapay', methods=['POST'])
 def handle_webhook():
+    raw = request.get_data()
     signature = request.headers.get('X-GembaPay-Signature')
-    
-    if not verify_webhook_signature(request.json, signature, WEBHOOK_SECRET):
+    if not verify_webhook_signature(raw, signature, WEBHOOK_SECRET):
         return 'Invalid signature', 401
-    
-    event = request.json['event']
-    payment = request.json['payment']
-    
+
+    data = json.loads(raw)
+    event = data['event']
     if event == 'payment.completed':
-        print(f"Payment completed via: {payment['network']}")
-        fulfill_order(payment['orderId'])
-    
+        fulfill_order(data['payment']['orderId'])
+    elif event == 'subscription.payment':
+        record_subscription_cycle(data)   # no orderId; use data['eventId']
     return 'OK', 200
 ```
 
@@ -326,26 +292,28 @@ def handle_webhook():
 
 ```php
 <?php
-function verifyWebhookSignature($payload, $signature, $secret) {
-    $expected = 'sha256=' . hash_hmac('sha256', json_encode($payload), $secret);
-    return hash_equals($expected, $signature);
+function verifyWebhookSignature($rawBody, $signature, $secret) {
+    // bare hex over the RAW body — no "sha256=" prefix, no re-encoding
+    $expected = hash_hmac('sha256', $rawBody, $secret);
+    return hash_equals($expected, (string) $signature);
 }
 
-// Usage
-$payload = json_decode(file_get_contents('php://input'), true);
-$signature = $_SERVER['HTTP_X_GEMBAPAY_SIGNATURE'];
+// Usage — hash the raw input string, then decode a SEPARATE copy for reading.
+$rawBody = file_get_contents('php://input');
+$signature = $_SERVER['HTTP_X_GEMBAPAY_SIGNATURE'] ?? '';
 
-if (!verifyWebhookSignature($payload, $signature, $webhookSecret)) {
+if (!verifyWebhookSignature($rawBody, $signature, $webhookSecret)) {
     http_response_code(401);
     exit('Invalid signature');
 }
 
+$payload = json_decode($rawBody, true);
 $event = $payload['event'];
-$payment = $payload['payment'];
 
 if ($event === 'payment.completed') {
-    error_log("Payment completed via: " . $payment['network']);
-    fulfillOrder($payment['orderId']);
+    fulfillOrder($payload['payment']['orderId']);
+} elseif ($event === 'subscription.payment') {
+    recordSubscriptionCycle($payload);   // no orderId; use $payload['eventId']
 }
 
 http_response_code(200);
@@ -356,19 +324,15 @@ echo 'OK';
 
 ## Retry Policy
 
-If your endpoint fails to respond with HTTP 200-299, GembaPay will retry:
+If your endpoint fails to respond with HTTP 200-299, GembaPay retries in two phases:
 
-| Attempt | Delay |
-|---------|-------|
-| 1 | Immediate |
-| 2 | 2 seconds |
-| 3 | 4 seconds |
-| 4 | 8 seconds |
+1. **Immediate:** 3 attempts, with a 2s then 4s pause between them.
+2. **Extended:** if all 3 immediate attempts fail, the delivery is queued and retried
+   **hourly for up to 72 hours**, with a reminder email after 24 hours.
 
-**Total attempts:** 4
-**Timeout per attempt:** 15 seconds
+**Timeout per attempt:** 15 seconds.
 
-After all retries are exhausted, the webhook is marked as failed. You can manually retry failed webhooks from the dashboard.
+After the 72-hour window is exhausted the delivery is marked `exhausted`. You can manually retry any delivery from the dashboard (a manual retry does not reopen the 72-hour window).
 
 ---
 
@@ -461,20 +425,25 @@ function handleWebhook(payload) {
     case 'payment.completed':
       // Handle based on payment method
       switch (payment.network) {
-        case 'ethereum':
-        case 'bsc':
-        case 'polygon':
-          return handleCryptoPayment(payment);
         case 'stripe':
           return handleStripePayment(payment);
         case 'paypal':
           return handlePayPalPayment(payment);
+        case 'ethereum':
+        case 'bsc':
+        case 'polygon':
+          return handleCryptoPayment(payment);
       }
       break;
-    case 'payment.failed':
-      return notifyPaymentFailed(payment);
-    case 'payment.expired':
-      return handleExpiredPayment(payment);
+    // Subscriptions use their own events + a flat payload (no `payment` wrapper):
+    case 'subscription.payment':
+      return recordSubscriptionCycle(payload);      // payload.eventId is the idempotency key
+    case 'subscription.activated':
+    case 'subscription.canceled':
+    case 'subscription.payment_failed':
+      return updateSubscriptionState(payload);
+    case 'webhook.test':
+      return; // dashboard connectivity check
     default:
       console.log('Unknown event:', event);
   }
@@ -548,10 +517,14 @@ ngrok http 3000
 
 ### Signature Verification Failing
 
-1. Verify you're using the correct webhook secret
-2. Check that payload is not modified before verification
-3. Ensure JSON encoding is consistent
-4. Check for whitespace or encoding issues
+1. Verify you're using the correct webhook secret.
+2. **Hash the RAW request body bytes** — not a re-parsed/re-serialized copy. `JSON.stringify(req.body)`
+   (Node) or `json.dumps(request.json)` (Python) will not reliably reproduce the exact bytes GembaPay
+   signed (key order / whitespace differ), and Python's `json.dumps` adds spaces by default. Use
+   `express.raw()` / `request.get_data()` / `php://input`.
+3. **Compare against the bare hex** — the signature is a plain 64-char HMAC-SHA256 hex string with
+   **no `sha256=` prefix**. Do not prepend one.
+4. Ensure a webhook secret is actually set for the merchant (without one, deliveries cannot be verified).
 
 ### Duplicate Webhooks
 

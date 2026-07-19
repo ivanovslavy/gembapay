@@ -141,7 +141,7 @@ Enters email, pays first cycle (Stripe or PayPal)
         ▼
 Subscription ACTIVE — provider auto-charges each cycle
         │
-        ├──► each paid cycle  → recorded in Transactions + payment.completed webhook
+        ├──► each paid cycle  → recorded in Transactions + subscription.payment webhook
         │
         ├──► upgrade  → effective immediately (proration / catch-up charge)
         ├──► downgrade → effective at next renewal (no refund)
@@ -172,7 +172,7 @@ Cancellation is **cancel-at-period-end**: the subscription stays active until th
 ### Fees and Records
 
 - GembaPay charges **1% per billing cycle**, collected automatically as a Stripe application fee or a PayPal platform fee. EUR is the base currency.
-- Each successful billing cycle is recorded in the merchant's **Transactions** and fires the merchant's **`payment.completed`** webhook (see [Webhooks](webhooks.md#subscription-events)).
+- Each successful billing cycle is recorded in the merchant's **Transactions** and fires the merchant's **`subscription.payment`** webhook. Subscriptions use dedicated `subscription.*` events with a flat payload (no `orderId`), **not** `payment.completed` — see [Webhooks](webhooks.md#subscription-events).
 
 ### For Developers
 
@@ -258,29 +258,31 @@ window.open(paymentRequest.paymentUrl, '_blank');
 // Express.js example
 const crypto = require('crypto');
 
-app.post('/webhooks/gembapay', express.json(), (req, res) => {
-  // Verify signature
-  const signature = req.headers['x-gembapay-signature'];
-  const expectedSig = 'sha256=' + crypto
-    .createHmac('sha256', process.env.WEBHOOK_SECRET)
-    .update(JSON.stringify(req.body))
-    .digest('hex');
-  
-  if (signature !== expectedSig) {
-    return res.status(401).send('Invalid signature');
-  }
-  
-  // Process the event
-  const { event, payment } = req.body;
-  
-  if (event === 'payment.completed') {
-    console.log('Payment method:', payment.network);
-    // network: 'ethereum', 'bsc', 'polygon', 'stripe', or 'paypal'
-    fulfillOrder(payment.orderId);
-  }
-  
-  res.status(200).send('OK');
-});
+// Use the RAW body (express.raw) and compare against BARE hex (no "sha256=" prefix),
+// computed over the exact bytes received. See docs/webhooks.md for the full contract.
+app.post('/webhooks/gembapay',
+  express.raw({ type: 'application/json' }),
+  (req, res) => {
+    const signature = req.headers['x-gembapay-signature'] || '';
+    const expected = crypto
+      .createHmac('sha256', process.env.WEBHOOK_SECRET)
+      .update(req.body)                       // req.body is a Buffer of the raw bytes
+      .digest('hex');
+    const a = Buffer.from(signature, 'utf8');
+    const b = Buffer.from(expected, 'utf8');
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+      return res.status(401).send('Invalid signature');
+    }
+
+    const { event, payment } = JSON.parse(req.body.toString('utf8'));
+    if (event === 'payment.completed') {
+      // network: 'stripe', 'paypal', or (when enabled) 'ethereum' / 'bsc' / 'polygon'
+      fulfillOrder(payment.orderId);
+    } else if (event === 'subscription.payment') {
+      recordSubscriptionCycle(JSON.parse(req.body.toString('utf8'))); // no orderId; use eventId
+    }
+    res.status(200).send('OK');
+  });
 ```
 
 ### Check Payment Status

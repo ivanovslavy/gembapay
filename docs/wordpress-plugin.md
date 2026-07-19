@@ -223,11 +223,13 @@ https://your-store.com/wp-json/gembapay/v1/webhook
 
 ### Signature Verification
 
-The plugin automatically verifies webhook signatures using HMAC-SHA256:
+The plugin verifies webhook signatures using HMAC-SHA256 as **bare hex** (no `sha256=` prefix),
+computed over the **raw request body** — matching GembaPay's signing exactly:
 
 ```php
-$expected = 'sha256=' . hash_hmac('sha256', json_encode($payload), $webhook_secret);
-if (!hash_equals($expected, $signature)) {
+$rawBody  = $request->get_body();                            // raw bytes, not a re-encode
+$expected = hash_hmac('sha256', $rawBody, $webhook_secret);  // bare hex
+if (!hash_equals($expected, (string) $signature)) {
     return new WP_REST_Response(['error' => 'Invalid signature'], 401);
 }
 ```

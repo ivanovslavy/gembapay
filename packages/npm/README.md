@@ -77,6 +77,13 @@ console.log(status.network);  // 'bsc', 'stripe', 'paypal', etc.
 
 ### Webhook Verification
 
+> **⚠️ SDK update required.** The live GembaPay backend signs webhooks as **bare hex** (no
+> `sha256=` prefix) over the **raw request body**. The current `verifyWebhook`/`webhookHandler`
+> in this SDK build expect a `sha256=` prefix and hash the parsed body, so they reject genuine
+> webhooks until the SDK is updated. Until then, verify manually against the raw body per
+> [docs/webhooks.md](../../docs/webhooks.md#signature-verification). Subscription cycles arrive as
+> `subscription.payment` (flat payload, no `orderId`), not `payment.completed`.
+
 ```javascript
 const express = require('express');
 const app = express();
@@ -112,9 +119,13 @@ app.post('/webhooks/gembapay', express.json(), (req, res) => {
 ### Transactions & Stats
 
 ```javascript
-const transactions = await gembapay.listTransactions();
 const stats = await gembapay.getStats();
+// const transactions = await gembapay.listTransactions();  // see note below
 ```
+
+> **Note:** `listTransactions()` currently targets a **dashboard (JWT) endpoint** and returns
+> `401` with an API key. Use `getStats()` / `getPaymentStatus()` programmatically, or view
+> transactions in the dashboard, until the SDK/endpoint is aligned.
 
 ## Test Mode
 

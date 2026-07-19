@@ -139,9 +139,10 @@ class GembaPay_API {
             return false;
         }
 
-        $expected = 'sha256=' . hash_hmac('sha256', $payload, $secret);
+        // GembaPay signs webhooks as BARE hex HMAC-SHA256 (no "sha256=" prefix) over the raw body.
+        $expected = hash_hmac('sha256', $payload, $secret);
 
-        return hash_equals($expected, $signature);
+        return hash_equals($expected, (string) $signature);
     }
 
     /**

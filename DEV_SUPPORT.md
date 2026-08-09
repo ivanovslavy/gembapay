@@ -41,7 +41,7 @@ GembaPay enables merchants to accept credit card (Stripe) and PayPal payments th
 
 **Technical Capabilities:**
 - Direct settlement into the merchant's own provider account
-- Multi-currency pricing (86+ fiat currencies with automatic USD conversion)
+- Multi-currency pricing (51+ fiat currencies with automatic USD conversion)
 - Live exchange rates for multi-currency pricing
 - NFT gift rewards for successful payments
 - Payment Links and QR codes — no-code shareable payment pages (single-use or multi-use/donations); fixed amount or payer-chosen ("pay what you want")
@@ -656,9 +656,9 @@ async function pollPaymentStatus(orderId, maxAttempts = 60) {
 
 ## Multi-Currency Support
 
-### Supported Currencies (86+)
+### Supported Currencies (51+)
 
-GembaPay supports 86+ fiat currencies for merchant pricing:
+GembaPay supports 51+ fiat currencies for merchant pricing:
 
 **Core Currencies (live reference rates):**
 USD, EUR, GBP, JPY, CHF, AUD, CAD, CNY, KRW, SGD, INR, BRL, TRY, ZAR, NZD, MXN

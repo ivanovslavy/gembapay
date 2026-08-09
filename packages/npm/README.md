@@ -13,7 +13,7 @@ Accept credit cards (via Stripe) and PayPal through a single API. Funds settle d
 
 - **One API, two payment methods** — Stripe (cards/Apple Pay/Google Pay) and PayPal
 - **Direct settlement** — Payments route straight into your own Stripe or PayPal account
-- **86+ currencies** — Price in any supported currency
+- **51+ currencies** — Price in any supported currency
 - **Test mode built-in** — Stripe and PayPal sandbox environments for development
 - **TypeScript support** — Full type definitions included
 - **Zero dependencies** — Uses only Node.js built-in modules

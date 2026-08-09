@@ -54,7 +54,7 @@ account**. Gemba EOOD never holds, controls, or has access to merchant or custom
 - Dashboard with transaction analytics
 - API key management
 - Webhook configuration with signed events
-- Multi-currency pricing (86+ currencies)
+- Multi-currency pricing (51+ currencies)
 - Real-time payment notifications
 - Two-factor authentication for dashboard login (authenticator app or email code)
 - Payment Links and QR codes — shareable, no-code payment pages (single-use or multi-use/donations)
@@ -112,7 +112,7 @@ path of the money itself.
 
 ## Supported Currencies
 
-Merchants set prices in their own local currency. GembaPay supports **86+ currencies** for
+Merchants set prices in their own local currency. GembaPay supports **51+ currencies** for
 pricing; the customer is charged in the currency supported by the chosen payment provider, using
 live exchange rates at the moment of checkout.
 

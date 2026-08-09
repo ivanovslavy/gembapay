@@ -40,7 +40,7 @@ GembaPay for WooCommerce is a unified payment gateway enabling merchants to acce
 **Key Benefits**
 
 - Unified checkout for all payment methods
-- 86+ fiat currencies supported
+- 51+ fiat currencies supported
 - Real-time exchange rates for multi-currency pricing
 - Instant settlement
 - Secure hosted payment page

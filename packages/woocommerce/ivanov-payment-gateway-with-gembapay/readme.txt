@@ -19,7 +19,7 @@ Ivanov Payment Gateway with GembaPay enables you to accept credit card and PayPa
 * **Unified Checkout** - Single integration for Stripe and PayPal
 * **Fiat Payments** - Credit/Debit Cards, Apple Pay, Google Pay via Stripe
 * **PayPal** - PayPal Balance, Bank Account, Pay Later
-* **86+ Currencies** - Set prices in your local currency
+* **51+ Currencies** - Set prices in your local currency
 * **Direct Settlement** - Funds settle straight into your own Stripe or PayPal account
 * **Low Fees** - Just 1% + €0.20 for cards and PayPal
 * **Automatic Order Updates** - Orders are updated via webhooks
@@ -83,7 +83,7 @@ Yes, you need to register at gembapay.com and complete KYC verification to get y
 
 = What currencies are supported? =
 
-GembaPay supports 86+ currencies for pricing. Customers are charged in the currency supported by the chosen payment provider, using live exchange rates at checkout.
+GembaPay supports 51+ currencies for pricing. Customers are charged in the currency supported by the chosen payment provider, using live exchange rates at checkout.
 
 = Where does the money go? =
 

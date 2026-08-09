@@ -4,7 +4,7 @@ Tags: woocommerce, payment gateway, stripe, paypal, credit card
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.1.1
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -110,6 +110,10 @@ Yes! GembaPay uses industry-standard security practices. Card payments are proce
 4. Order details with transaction info
 
 == Changelog ==
+
+= 1.2.0 =
+* Updated the plugin listing and gateway labels to the supported payment methods (Stripe cards and PayPal).
+* Clarified that funds settle directly into the merchant's own connected account.
 
 = 1.1.1 =
 * Fixed webhook signature verification to match GembaPay's signing exactly: the

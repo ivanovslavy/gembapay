@@ -1,6 +1,6 @@
 === Ivanov Payment Gateway with GembaPay ===
 Contributors: gembapay
-Tags: woocommerce, payment gateway, crypto, stripe, paypal
+Tags: woocommerce, payment gateway, stripe, paypal, credit card
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
@@ -8,32 +8,28 @@ Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Accept crypto, credit card, and PayPal payments in WooCommerce through a unified checkout experience with GembaPay.
+Accept credit card and PayPal payments in WooCommerce through a unified checkout experience with GembaPay.
 
 == Description ==
 
-Ivanov Payment Gateway with GembaPay enables you to accept cryptocurrency, credit card, and PayPal payments through a single, unified checkout experience.
+Ivanov Payment Gateway with GembaPay enables you to accept credit card and PayPal payments through a single, unified checkout experience.
 
 = Features =
 
-* **Unified Checkout** - Single integration for Crypto, Stripe, and PayPal
-* **Multi-Chain Crypto** - Accept payments on Ethereum, BNB Smart Chain, and Polygon
-* **Multiple Tokens** - ETH, BNB, POL, USDC, USDT, plus EURC and GMB
-* **EURC Stablecoin** - Accept the euro-pegged EURC stablecoin on Ethereum and Polygon
-* **GMB Token** - Native GembaBlockchain (GMB) token; a configurable discount can be offered to GMB holders at checkout
+* **Unified Checkout** - Single integration for Stripe and PayPal
 * **Fiat Payments** - Credit/Debit Cards, Apple Pay, Google Pay via Stripe
 * **PayPal** - PayPal Balance, Bank Account, Pay Later
 * **86+ Currencies** - Set prices in your local currency
-* **Non-Custodial** - Crypto payments go directly to your wallet
-* **Low Fees** - Just 1% for crypto, 1% + €0.20 for cards/PayPal
+* **Direct Settlement** - Funds settle straight into your own Stripe or PayPal account
+* **Low Fees** - Just 1% + €0.20 for cards and PayPal
 * **Automatic Order Updates** - Orders are updated via webhooks
-* **Transaction Details** - Blockchain explorer links for crypto payments
+* **Transaction Details** - Provider reference shown on the order
 
 = How It Works =
 
 1. Customer selects GembaPay at checkout
 2. Customer is redirected to GembaPay's secure checkout page
-3. Customer chooses their preferred payment method (Crypto, Card, or PayPal)
+3. Customer chooses their preferred payment method (Card or PayPal)
 4. Payment is processed and customer is returned to your store
 5. Order status is automatically updated via webhook
 
@@ -87,25 +83,24 @@ Yes, you need to register at gembapay.com and complete KYC verification to get y
 
 = What currencies are supported? =
 
-GembaPay supports 86+ fiat currencies for pricing. Cryptocurrency payments support ETH, BNB, POL, USDC, USDT, the euro-pegged EURC stablecoin (on Ethereum and Polygon), and the GMB (GembaBlockchain) token, across Ethereum, BNB Smart Chain, and Polygon networks.
+GembaPay supports 86+ currencies for pricing. Customers are charged in the currency supported by the chosen payment provider, using live exchange rates at checkout.
 
-= How are crypto payments handled? =
+= Where does the money go? =
 
-Crypto payments are non-custodial - funds go directly from the customer's wallet to your wallet via smart contract. GembaPay never holds your funds.
+Payments settle directly into your own connected Stripe or PayPal account. GembaPay never holds your funds.
 
 = What are the fees? =
 
-* Cryptocurrency: 1%
 * Credit/Debit Cards: 1% + €0.20 + Stripe fees
 * PayPal: 1% + €0.20 + PayPal fees
 
 = How do refunds work? =
 
-For card and PayPal payments, refunds are processed through those platforms. For crypto payments, refunds must be sent manually to the customer's wallet address.
+For card and PayPal payments, refunds are processed through those platforms.
 
 = Is it secure? =
 
-Yes! GembaPay uses industry-standard security practices. Crypto payments use audited smart contracts. Card payments are processed by Stripe. All API communications use TLS encryption.
+Yes! GembaPay uses industry-standard security practices. Card payments are processed by Stripe. All API communications use TLS encryption.
 
 == Screenshots ==
 
@@ -126,12 +121,10 @@ Yes! GembaPay uses industry-standard security practices. Crypto payments use aud
 * Order detail / status lookups now use the authenticated merchant API endpoints
   (GET /api/merchant/payment/:orderId and /payment-status/:orderId) instead of the
   public customer endpoints. Checkout and webhooks are unchanged.
-* Documented EURC stablecoin support (Ethereum, Polygon) and the GMB token.
 * readme: aligned stated requirements to WooCommerce 7.0 / PHP 8.0.
 
 = 1.0.0 =
 * Initial release
-* Crypto payments (ETH, BNB, POL, USDC, USDT)
 * Stripe integration (Cards, Apple Pay, Google Pay)
 * PayPal integration
 * Webhook support for automatic order updates

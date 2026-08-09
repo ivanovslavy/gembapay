@@ -28,7 +28,7 @@ declare module 'gembapay' {
     amountUsd: string;
     amountOriginal: number;
     currencyOriginal: string;
-    allowedMethods: ('crypto' | 'stripe' | 'paypal')[];
+    allowedMethods: ('stripe' | 'paypal')[];
     expiresAt: string;
   }
 
@@ -36,8 +36,8 @@ declare module 'gembapay' {
     orderId: string;
     status: 'pending' | 'processing' | 'confirmed' | 'completed' | 'failed' | 'expired';
     amountUsd: string;
-    network: 'ethereum' | 'bsc' | 'polygon' | 'sepolia' | 'bscTestnet' | 'amoy' | 'stripe' | 'paypal';
-    paymentProvider: 'crypto' | 'stripe' | 'paypal';
+    network: 'stripe' | 'paypal';
+    paymentProvider: 'stripe' | 'paypal';
     payment?: {
       txHash?: string;
       tokenSymbol?: string;

@@ -25,3 +25,8 @@ docs/subscription-integration-changelog.md
 
 # local backups next to edited docs (kept on server, not in repo)
 *.bak.*
+
+# Local backups — never publish
+*.bak
+*.bak-*
+*.bak.*

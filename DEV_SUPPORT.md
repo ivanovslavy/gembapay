@@ -18,9 +18,7 @@ Comprehensive technical guide for integrating **GembaPay** into merchant applica
 6. [Customer Payment Flow](#customer-payment-flow)
 7. [Webhook Integration](#webhook-integration)
 8. [Payment Status Polling](#payment-status-polling)
-9. [NFT Gift System](#nft-gift-system)
 10. [Multi-Currency Support](#multi-currency-support)
-11. [Network and Token Support](#network-and-token-support)
 12. [Stripe Integration](#stripe-integration)
 13. [PayPal Integration](#paypal-integration)
 14. [Error Handling](#error-handling)
@@ -32,29 +30,24 @@ Comprehensive technical guide for integrating **GembaPay** into merchant applica
 
 ## Overview
 
-GembaPay enables merchants to accept cryptocurrency, credit card (Stripe), and PayPal payments through a unified API.
+GembaPay enables merchants to accept credit card (Stripe) and PayPal payments through a unified API.
 
 ### Key Features
 
 **Payment Methods:**
-- Cryptocurrency payments (ETH, BNB, POL, USDC, USDT)
 - Credit card payments via Stripe Connect
 - PayPal payments via Commerce Platform
 - Unified webhook notifications for all payment types
 
 **Technical Capabilities:**
-- Non-custodial settlement (P2P wallet-to-wallet)
-- Multi-chain support (Ethereum, BSC, Polygon Mainnet)
+- Direct settlement into the merchant's own provider account
 - Multi-currency pricing (86+ fiat currencies with automatic USD conversion)
-- Direct stablecoin transfers (~60% lower gas costs)
-- Chainlink oracle price validation
-- NFT gift rewards for successful crypto payments
+- Live exchange rates for multi-currency pricing
+- NFT gift rewards for successful payments
 - Payment Links and QR codes — no-code shareable payment pages (single-use or multi-use/donations); fixed amount or payer-chosen ("pay what you want")
 
 **Authentication Options:**
 - Email/password registration and login
-- Web3 wallet authentication (MetaMask, Coinbase Wallet)
-- Wallet linking to existing accounts
 - API key authentication for integrations
 
 ---
@@ -88,7 +81,7 @@ const response = await axios.post(
 
 // 3. Redirect customer to unified checkout
 window.location.href = response.data.paymentUrl;
-// Customer chooses: Crypto, Stripe, or PayPal
+// Customer chooses: Stripe or PayPal
 
 // 4. Receive webhook when payment completes
 // POST https://yourstore.com/webhooks/gembapay
@@ -98,7 +91,7 @@ window.location.href = response.data.paymentUrl;
 
 ## Merchant Registration
 
-### Option 1: Email/Password Registration
+### Registration
 
 ```bash
 curl -X POST https://api.gembapay.com/api/auth/register \
@@ -110,40 +103,11 @@ curl -X POST https://api.gembapay.com/api/auth/register \
   }'
 ```
 
-### Option 2: Web3 Wallet Registration
-
-**Step 1: Get Nonce**
-```bash
-curl -X POST https://api.gembapay.com/api/auth/web3/nonce \
-  -H "Content-Type: application/json" \
-  -d '{"walletAddress": "0x..."}'
-```
-
-**Step 2: Sign Message (Frontend)**
-```javascript
-const message = `Sign in to GembaPay Merchant Dashboard\n\nNonce: ${nonce}\nAddress: ${walletAddress}`;
-const signature = await signer.signMessage(message);
-```
-
-**Step 3: Register**
-```bash
-curl -X POST https://api.gembapay.com/api/auth/web3/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "walletAddress": "0x...",
-    "signature": "0x...",
-    "nonce": "abc123...",
-    "companyName": "My Store",
-    "email": "optional@email.com"
-  }'
-```
-
 ### Option 3: Dashboard UI
 
 Visit https://merchant-dashboard.gembapay.com/register
 
-- Choose Email or Web3 registration
-- Web3: Connect MetaMask → Fill company details
+- Register with your email address
 - Email: Fill all fields → Submit
 - Complete KYC verification
 
@@ -363,7 +327,7 @@ header("Location: " . $payment['paymentUrl']);
   "amountOriginal": 100.00,
   "currencyOriginal": "EUR",
   "exchangeRate": 1.087,
-  "allowedMethods": ["crypto", "stripe", "paypal"],
+  "allowedMethods": ["stripe", "paypal"],
   "expiresAt": "2026-01-25T12:00:00.000Z"
 }
 ```
@@ -435,7 +399,7 @@ function CheckoutButton({ product }) {
       </button>
       
       <p className="payment-methods">
-        Accepts: Crypto • Cards • PayPal
+        Accepts: Cards • PayPal
       </p>
     </div>
   );
@@ -467,20 +431,8 @@ Use the `paymentUrl` returned by the API as the iframe `src` — never construct
 ### Payment Methods
 
 Customer chooses between:
-- **Cryptocurrency** - ETH, BNB, POL, USDC, USDT (non-custodial P2P)
 - **Stripe** - Credit/Debit cards, Apple Pay, Google Pay
 - **PayPal** - PayPal balance, bank account, Pay Later
-
-### Cryptocurrency Flow
-
-1. Connect wallet (MetaMask or Coinbase Wallet)
-2. Select network (Ethereum, BSC, or Polygon)
-3. Select token (Native or Stablecoin)
-4. For native tokens: Lock quote → Confirm within time window
-5. For stablecoins: Direct transfer (lower gas)
-6. Payment confirmed on blockchain
-7. Webhook sent to merchant
-8. Optional: Claim free NFT gift
 
 ### Stripe Flow
 
@@ -549,7 +501,7 @@ app.post('/webhooks/gembapay', express.raw({ type: 'application/json' }), async 
 
   switch (event) {
     case 'payment.completed':
-      await handlePaymentCompleted(payment);       // one-off: stripe / paypal / crypto
+      await handlePaymentCompleted(payment);       // one-off: stripe / paypal
       break;
     case 'subscription.payment':
       await recordSubscriptionCycle(body);         // flat payload, no orderId → use body.eventId
@@ -590,27 +542,6 @@ X-GembaPay-Event: payment.completed
 X-GembaPay-Signature: 9f8b2c1a...   (bare HMAC-SHA256 hex, no "sha256=" prefix)
 X-GembaPay-Merchant-Id: your-merchant-id
 X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
-```
-
-### Webhook Payload - Crypto Payment
-
-```json
-{
-  "event": "payment.completed",
-  "payment": {
-    "id": "uuid-payment-id",
-    "orderId": "ORDER-123",
-    "txHash": "0x84579c019dc334474a9421072b633bdb981d0a1ab4aa4a2e48aba4189e05179d",
-    "network": "bsc",
-    "paymentProvider": "crypto",
-    "usdAmount": 108.70,
-    "customerAddress": "0xc45112B334822811f4418e2f13C2C80FF790C949",
-    "tokenAmount": "0.157892",
-    "tokenSymbol": "BNB",
-    "status": "confirmed"
-  },
-  "timestamp": "2026-01-25T08:15:05.193Z"
-}
 ```
 
 ### Webhook Payload - Stripe Payment
@@ -659,7 +590,7 @@ X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
 
 | Event | Description |
 |-------|-------------|
-| `payment.completed` | A one-off payment was processed (stripe / paypal / crypto) |
+| `payment.completed` | A one-off payment was processed (stripe / paypal) |
 | `subscription.activated` | A subscription became active |
 | `subscription.payment` | A recurring subscription cycle was paid |
 | `subscription.payment_failed` | A subscription cycle charge failed |
@@ -716,56 +647,10 @@ async function pollPaymentStatus(orderId, maxAttempts = 60) {
 |--------|-------------|
 | `pending` | Awaiting payment |
 | `processing` | Payment in progress |
-| `confirmed` | Crypto payment confirmed on blockchain |
+| `confirmed` | Payment confirmed by the provider |
 | `completed` | Payment fully completed |
 | `failed` | Payment failed |
 | `expired` | Payment request expired |
-
----
-
-## NFT Gift System
-
-Every successful **crypto** payment includes a free commemorative NFT gift.
-
-### Claiming NFT (Customer)
-
-After payment confirmation, customers see a "Claim NFT" button:
-
-```javascript
-// Frontend - after payment confirmed
-const claimNFT = async (orderId) => {
-  // Connect wallet if not connected
-  const provider = new ethers.BrowserProvider(window.ethereum);
-  const signer = await provider.getSigner();
-  
-  // Call claim endpoint
-  const response = await fetch(
-    `https://api.gembapay.com/api/customer/payment/${orderId}/claim-nft`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        claimAddress: await signer.getAddress()
-      })
-    }
-  );
-  
-  const data = await response.json();
-  
-  if (data.success) {
-    console.log('NFT claimed! TX:', data.txHash);
-    console.log('Token ID:', data.tokenId);
-  }
-};
-```
-
-### NFT Contract Details
-
-| Network | Contract Address | Max Supply |
-|---------|------------------|------------|
-| Ethereum | `0xD24a89dc1686C2F88d33A70250473495459C564a` | 10,000 |
-| BSC | `0x8Fee75865E8D87cdB844Ef5676D2D6456262BA7A` | 10,000 |
-| Polygon | `0xD24a89dc1686C2F88d33A70250473495459C564a` | 10,000 |
 
 ---
 
@@ -775,7 +660,7 @@ const claimNFT = async (orderId) => {
 
 GembaPay supports 86+ fiat currencies for merchant pricing:
 
-**Chainlink Oracle Currencies (On-chain rates):**
+**Core Currencies (live reference rates):**
 USD, EUR, GBP, JPY, CHF, AUD, CAD, CNY, KRW, SGD, INR, BRL, TRY, ZAR, NZD, MXN
 
 **API-Supported Currencies:**
@@ -812,53 +697,6 @@ curl https://api.gembapay.com/api/customer/currencies
 ```bash
 curl "https://api.gembapay.com/api/customer/convert?amount=100&from=EUR&to=USD"
 ```
-
----
-
-## Network and Token Support
-
-### Production Networks
-
-| Network | Chain ID | Native Token | Status |
-|---------|----------|--------------|--------|
-| Ethereum Mainnet | 1 | ETH | ✅ Production |
-| BNB Smart Chain | 56 | BNB | ✅ Production |
-| Polygon | 137 | POL | ✅ Production |
-
-### Supported Tokens
-
-| Token | Type | Networks | Gas Cost |
-|-------|------|----------|----------|
-| ETH | Native | Ethereum | Higher |
-| BNB | Native | BSC | Higher |
-| POL | Native | Polygon | Higher |
-| USDC | Stablecoin | All | ~60% lower |
-| USDT | Stablecoin | All | ~60% lower |
-
-### Smart Contract Addresses
-
-**Payment Gateway (Mainnet):**
-
-| Network | Address | Explorer |
-|---------|---------|----------|
-| Ethereum | `0xD9c4169061B92970b86afBF32dad4Ecfd749179e` | [Etherscan](https://etherscan.io/address/0xD9c4169061B92970b86afBF32dad4Ecfd749179e) |
-| BSC | `0xeE3d1CbD3cAF2D9194CbfC5B1bE8fdD5c3953eE1` | [BscScan](https://bscscan.com/address/0xeE3d1CbD3cAF2D9194CbfC5B1bE8fdD5c3953eE1) |
-| Polygon | `0x7cceCb66E7Fa6255244035533E31791bD1Fff254` | [PolygonScan](https://polygonscan.com/address/0x7cceCb66E7Fa6255244035533E31791bD1Fff254) |
-
-**NFT Gift Contract (Mainnet):**
-
-| Network | Address | Explorer |
-|---------|---------|----------|
-| Ethereum | `0xD24a89dc1686C2F88d33A70250473495459C564a` | [Etherscan](https://etherscan.io/address/0xD24a89dc1686C2F88d33A70250473495459C564a) |
-| BSC | `0x8Fee75865E8D87cdB844Ef5676D2D6456262BA7A` | [BscScan](https://bscscan.com/address/0x8Fee75865E8D87cdB844Ef5676D2D6456262BA7A) |
-| Polygon | `0xD24a89dc1686C2F88d33A70250473495459C564a` | [PolygonScan](https://polygonscan.com/address/0xD24a89dc1686C2F88d33A70250473495459C564a) |
-
-**Stablecoin Addresses:**
-
-| Token | Ethereum | BSC | Polygon |
-|-------|----------|-----|---------|
-| USDC | `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` | `0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d` | `0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359` |
-| USDT | `0xdAC17F958D2ee523a2206206994597C13D831ec7` | `0x55d398326f99059fF775485246999027B3197955` | `0xc2132D05D31c914a87C6611C10748AEb04B58e8F` |
 
 ---
 
@@ -1043,25 +881,23 @@ try {
 │  4. Customer: Select payment method on unified checkout      │
 └──────────────────────────────────────────────────────────────┘
                               │
-            ┌─────────────────┼─────────────────┐
-            ▼                 ▼                 ▼
-      ┌──────────┐      ┌──────────┐      ┌──────────┐
-      │  Crypto  │      │  Stripe  │      │  PayPal  │
-      │ MetaMask │      │ Checkout │      │ Checkout │
-      │ Coinbase │      │          │      │          │
-      └────┬─────┘      └────┬─────┘      └────┬─────┘
-           │                 │                 │
-           │ P2P to         │ Card            │ PayPal
-           │ Merchant       │ Payment         │ Payment
-           │ Wallet         │                 │
-           │                 │                 │
-           └─────────────────┼─────────────────┘
-                             ▼
+                  ┌─────────────────┴─────────────────┐
+                  ▼                                   ▼
+            ┌──────────┐                        ┌──────────┐
+            │  Stripe  │                        │  PayPal  │
+            │ Checkout │                        │ Checkout │
+            └────┬─────┘                        └────┬─────┘
+                 │                                   │
+                 │ Card                              │ PayPal
+                 │ Payment                           │ Payment
+                 │                                   │
+                 └─────────────────┬─────────────────┘
+                                   ▼
 ┌──────────────────────────────────────────────────────────────┐
 │  5. GembaPay → Merchant: Webhook notification                │
 │     POST /webhooks/gembapay                                  │
 │     { event: "payment.completed", payment: {...} }           │
-│     Network: "ethereum" | "bsc" | "polygon" | "stripe" | "paypal" │
+│     Provider: "stripe" | "paypal"                            │
 └──────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -1075,7 +911,7 @@ try {
                               │
                               ▼
 ┌──────────────────────────────────────────────────────────────┐
-│  7. Customer (Crypto only): Claim free NFT gift              │
+│  7. Customer: Claim the free commemorative NFT gift          │
 │     POST /api/customer/payment/:orderId/claim-nft            │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -1101,8 +937,7 @@ try {
 
 ### User Experience
 
-- **Show payment methods upfront** - Display crypto/card/PayPal options
-- **Provide transaction hash** - Show blockchain TX hash for crypto payments
+- **Show payment methods upfront** - Display card and PayPal options
 - **Link to block explorer** - Let customers verify their transactions
 - **Mobile-responsive checkout** - Ensure checkout works on all devices
 - **Clear error messages** - Help customers understand and recover from errors
@@ -1145,7 +980,6 @@ if (existing) return res.status(200).json({ received: true }); // Already proces
 |--------|----------|-------------|
 | GET | `/api/customer/payment/:orderId` | Get payment details |
 | GET | `/api/customer/payment/:orderId/status` | Check payment status |
-| POST | `/api/customer/payment/:orderId/lock` | Lock quote (crypto native) |
 | POST | `/api/customer/payment/:orderId/claim-nft` | Claim NFT gift |
 | GET | `/api/customer/currencies` | List supported currencies |
 | GET | `/api/customer/convert` | Convert currency |
@@ -1201,7 +1035,6 @@ Payment Links are created and managed from the Merchant Dashboard (Dashboard →
 
 | Payment Method | GembaPay Fee | Provider Fee | Total |
 |----------------|--------------|--------------|-------|
-| Crypto | 1% | Gas only | 1% + gas |
 | Stripe | 1% | ~2.9% + $0.30 | ~4% |
 | PayPal | 1% | ~2.9% + $0.30 | ~4% |
 

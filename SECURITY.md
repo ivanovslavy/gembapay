@@ -17,50 +17,11 @@ If you discover a security vulnerability in GembaPay, please report it responsib
 
 ---
 
-## Smart Contract Security
-
-### Audits and Analysis
-
-**Slither Static Analysis**
-- Tool: Slither v0.10.x
-- Result: Zero high-severity findings
-- Full report: [docs/security-audit.md](docs/security-audit.md)
-
-### Security Features
-
-**Reentrancy Protection**
-- OpenZeppelin ReentrancyGuard implementation
-- All external calls follow checks-effects-interactions pattern
-
-**Access Control**
-- Ownable pattern for administrative functions
-- Merchant whitelist system
-- Function-level access restrictions
-
-**Oracle Security**
-- Dual-oracle price validation
-- Staleness threshold: 3600 seconds (1 hour)
-- Price deviation check: 5% maximum between oracles
-- Fallback mechanisms for oracle failures
-
-**Payment Security**
-- Quote expiration enforcement (5 minutes)
-- Minimum payment thresholds
-- Amount validation before processing
-- Quote-based locking for native token payments
-
-**Emergency Controls**
-- Pause functionality for emergency situations
-- Owner-only pause/unpause capability
-- Graceful handling of paused state
-
----
-
 ## API Security
 
 **Authentication**
 - JWT tokens for session management
-- API key authentication for merchant requests
+- API key authentication for merchant requests, with separate test and live credentials
 - Separate authentication for admin functions
 - Optional two-factor authentication (2FA) for merchant dashboard login — authenticator app (TOTP) or 6-digit email code, with one-time backup codes; TOTP secrets are encrypted at rest
 
@@ -68,6 +29,7 @@ If you discover a security vulnerability in GembaPay, please report it responsib
 - TLS/HTTPS encryption for all traffic
 - Password hashing using bcrypt
 - Sensitive data encryption at rest
+- Card details are never seen or stored by GembaPay — they are handled exclusively by our PCI-DSS certified payment processors
 
 **Request Security**
 - Rate limiting on all endpoints
@@ -76,14 +38,26 @@ If you discover a security vulnerability in GembaPay, please report it responsib
 - SQL injection prevention (Prisma ORM)
 
 **Webhook Security**
-- Signature verification for incoming webhooks
+- HMAC-SHA256 signature verification on every outgoing event
 - Replay attack prevention
-- Timeout handling
+- Timeout handling and bounded retries
 
 **Payment Link Integrity**
 - Single-use links are atomically reserved for one payer while a checkout is in progress, so they cannot be paid twice — a concurrent checkout is rejected until the short reservation expires (it expires automatically if the payer does not complete)
-- Duplicate-payment detection: the first completed payment claims a single-use link; any later payment (e.g. a late, irreversible on-chain transaction) is flagged as a refundable overpayment, excluded from the link's usage total, and the merchant is notified
+- Duplicate-payment detection: the first completed payment claims a single-use link; any later payment is flagged as a refundable overpayment, excluded from the link's usage total, and the merchant is notified
 - Multi-use links enforce their usage-count and total-amount limits
+
+---
+
+## Payment Handling
+
+GembaPay never holds, controls, or has access to merchant or customer funds. Every payment is
+executed by Stripe or PayPal — licensed payment institutions — and settles directly into the
+merchant's own connected account. This means GembaPay cannot freeze, seize, or redirect a payment,
+and a compromise of GembaPay cannot move merchant funds.
+
+Refunds, reversals, and chargebacks are handled under the rules of the merchant's payment
+provider.
 
 ---
 
@@ -97,7 +71,7 @@ If you discover a security vulnerability in GembaPay, please report it responsib
 
 **Database Security**
 - Encrypted connections
-- Regular backups
+- Regular backups and streaming replication to a failover host
 - Access control lists
 - Query parameterization
 
@@ -105,64 +79,13 @@ If you discover a security vulnerability in GembaPay, please report it responsib
 
 ## Known Limitations
 
-**Blockchain Risks**
-- Transaction finality depends on network confirmation times
-- Gas price fluctuations may affect transaction costs
-- Network congestion may delay transactions
+**Third-Party Dependencies**
+- Payment availability depends on the uptime of Stripe and PayPal
+- Provider-side risk checks may decline an otherwise valid payment
+- Changes to provider terms or APIs may require merchant-side updates
 
-**Oracle Risks**
-- Price feed delays in extreme market conditions
-- Potential for oracle manipulation (mitigated by dual-oracle validation)
-
-**Payment Risks**
-- On-chain crypto payments are irreversible; a rare duplicate payment on a single-use link cannot be auto-reversed — it is detected, excluded from the link's total, and flagged to the merchant for a manual refund
-
-**Smart Contract Risks**
-- Immutable code after deployment
-- Upgrade path requires contract migration
-
----
-
-## Security Best Practices for Merchants
-
-**Account Security**
-- Enable two-factor authentication (2FA) on your dashboard account — authenticator app or email code
-- Store your 2FA backup codes somewhere safe (each can be used once)
-- Use a strong, unique password for your dashboard login
-
-**API Key Management**
-- Store API keys securely (environment variables, secrets manager)
-- Rotate API keys periodically
-- Use separate keys for development and production
-
-**Webhook Verification**
-- Always verify webhook signatures
-- Implement idempotency for webhook handlers
-- Log all webhook events
-
-**Transaction Verification**
-- Verify transaction status via API before fulfilling orders
-- Do not rely solely on webhook notifications
-- Implement timeout handling for pending transactions
-
----
-
-## Compliance
-
-**Data Protection**
-- GDPR compliant data handling
-- 5-year data retention for AML compliance
-- User data deletion upon request (where legally permitted)
-
-**KYC/AML**
-- Mandatory KYC verification for all merchants
-- Transaction monitoring for suspicious activity
-- Sanctions screening
-
----
-
-## Related Documentation
-
-- [README](README.md) - Project overview
-- [Security Audit](docs/security-audit.md) - Detailed audit report
-- [Smart Contracts](docs/smart-contracts.md) - Contract documentation
+**Operational**
+- Webhook delivery is retried, but merchants should treat the payment status endpoint as the
+  authoritative source of truth
+- Exchange rates for multi-currency pricing are taken at the moment of checkout and may move
+  between quote and settlement

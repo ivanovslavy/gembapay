@@ -6,7 +6,7 @@
 
 ## Overview
 
-This guide walks you through integrating GembaPay into your website or application. Accept crypto (ETH, BNB, POL, USDC, USDT), Stripe, and PayPal payments through a unified checkout.
+This guide walks you through integrating GembaPay into your website or application. Accept Stripe card payments and PayPal through a unified checkout.
 
 ---
 
@@ -28,7 +28,7 @@ This guide walks you through integrating GembaPay into your website or applicati
 ### Step 1: Register as a Merchant
 
 1. Visit https://merchant-dashboard.gembapay.com
-2. Create an account with email or Web3 wallet
+2. Create an account with your email address
 3. Complete KYC verification
 4. Wait for account approval
 
@@ -38,7 +38,6 @@ This guide walks you through integrating GembaPay into your website or applicati
 - Government-issued ID
 - Selfie verification
 - Business information
-- Wallet address
 
 **Limits with Basic KYC:**
 - 2,000 EUR per day
@@ -55,7 +54,6 @@ This guide walks you through integrating GembaPay into your website or applicati
 
 In your merchant dashboard:
 
-1. **Crypto Payments:** Add your wallet address (works immediately)
 2. **Stripe:** Complete Stripe Connect onboarding (Settings → Payment Methods → Stripe)
 3. **PayPal:** Complete PayPal Commerce Platform onboarding (Settings → Payment Methods → PayPal)
 
@@ -96,7 +94,7 @@ If you do not have a website or online store, you can accept payments without wr
 7. Pick **Test** or **Live** mode (Live requires approved KYC)
 8. Save — you get a shareable URL and a QR code
 
-The link is hosted at `https://payment.gembapay.com/link/<token>`. Share the URL or print the QR code; the customer opens it, fills in any required details, and pays with any enabled method. Funds settle directly to you (non-custodial), and you can track status and usage in the dashboard.
+The link is hosted at `https://payment.gembapay.com/link/<token>`. Share the URL or print the QR code; the customer opens it, fills in any required details, and pays with any enabled method. Funds settle directly to you, and you can track status and usage in the dashboard.
 
 ### Single-Use vs Multi-Use
 
@@ -113,7 +111,7 @@ Developers who want to read a link's details or start checkout programmatically 
 
 Charge your customers automatically on a recurring schedule — for memberships, SaaS plans, or any service billed per period. You create plans **programmatically via the GembaPay API**, then share a hosted subscribe link or paste an embeddable button on your own website.
 
-Recurring billing is handled by the **native subscription engines of Stripe and PayPal**, which automatically charge each cycle and manage retries and dunning for failed payments. **Crypto subscriptions are not supported**, because a wallet cannot be auto-charged without on-chain authorization for each individual charge.
+Recurring billing is handled by the **native subscription engines of Stripe and PayPal**, which automatically charge each cycle and manage retries and dunning for failed payments. **Recurring billing runs entirely on the providers**, because the provider stores the mandate and pulls each charge without further authorization for each individual charge.
 
 ### Create a Plan
 
@@ -194,7 +192,7 @@ Plans are created and managed with the merchant API (dashboard JWT); the hosted 
 3. Redirect customer to paymentUrl
        │
        ▼
-4. Customer selects payment method (Crypto, Stripe, or PayPal)
+4. Customer selects payment method (Stripe or PayPal)
        │
        ▼
 5. Customer completes payment
@@ -230,7 +228,7 @@ curl -X POST https://api.gembapay.com/api/merchant/payment-request \
   "amountOriginal": 49.99,
   "currencyOriginal": "EUR",
   "exchangeRate": 1.087,
-  "allowedMethods": ["crypto", "stripe", "paypal"],
+  "allowedMethods": ["stripe", "paypal"],
   "expiresAt": "2026-01-25T12:00:00.000Z"
 }
 ```
@@ -276,7 +274,7 @@ app.post('/webhooks/gembapay',
 
     const { event, payment } = JSON.parse(req.body.toString('utf8'));
     if (event === 'payment.completed') {
-      // network: 'stripe', 'paypal', or (when enabled) 'ethereum' / 'bsc' / 'polygon'
+      // network: 'stripe' or 'paypal'
       fulfillOrder(payment.orderId);
     } else if (event === 'subscription.payment') {
       recordSubscriptionCycle(JSON.parse(req.body.toString('utf8'))); // no orderId; use eventId
@@ -434,7 +432,7 @@ function CheckoutButton({ product }) {
       
       if (data.success) {
         // Redirect to GembaPay unified checkout
-        // Customer chooses Crypto, Stripe, or PayPal there
+        // Customer chooses Stripe or PayPal there
         window.location.href = data.paymentUrl;
       }
     } catch (error) {
@@ -465,7 +463,7 @@ function CheckoutButton({ product }) {
       </button>
       
       <p className="payment-methods">
-        Accepts: Crypto • Cards • PayPal
+        Accepts: Cards • PayPal
       </p>
     </div>
   );
@@ -495,19 +493,15 @@ See [WordPress Plugin Documentation](wordpress-plugin.md) for installation and c
 Use test API keys (prefixed with `gembapay_test_`) during development.
 
 **Test Networks:**
-- Ethereum Sepolia
-- BSC Testnet
-- Polygon Amoy
 
 ### Test Tokens
 
-Get test USDC and USDT from faucets or contact support.
+Use the Stripe and PayPal sandbox test credentials, or contact support.
 
 ### Test Checklist
 
 - [ ] Payment request creation
 - [ ] Customer redirect to payment page
-- [ ] Crypto payment completion
 - [ ] Stripe payment completion
 - [ ] PayPal payment completion
 - [ ] Webhook receipt and verification
@@ -521,7 +515,6 @@ Get test USDC and USDT from faucets or contact support.
 ### Pre-Launch Checklist
 
 - [ ] Complete Full KYC verification
-- [ ] Add production wallet address
 - [ ] Connect production Stripe account
 - [ ] Connect production PayPal account
 - [ ] Generate production API key

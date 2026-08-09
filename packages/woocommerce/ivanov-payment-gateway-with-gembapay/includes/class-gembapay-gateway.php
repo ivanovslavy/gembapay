@@ -27,7 +27,7 @@ class GembaPay_Gateway extends WC_Payment_Gateway {
         $this->icon               = GEMBAPAY_PLUGIN_URL . 'assets/images/gembapay-logo.png';
         $this->has_fields         = false;
         $this->method_title       = __('GembaPay', 'ivanov-payment-gateway-with-gembapay');
-        $this->method_description = __('Accept Crypto, Credit Cards, and PayPal payments with GembaPay unified checkout.', 'ivanov-payment-gateway-with-gembapay');
+        $this->method_description = __('Accept Credit Cards and PayPal payments with GembaPay unified checkout.', 'ivanov-payment-gateway-with-gembapay');
         $this->supports           = array(
             'products',
             'refunds',
@@ -70,14 +70,14 @@ class GembaPay_Gateway extends WC_Payment_Gateway {
                 'title'       => __('Title', 'ivanov-payment-gateway-with-gembapay'),
                 'type'        => 'text',
                 'description' => __('Payment method title shown to customers.', 'ivanov-payment-gateway-with-gembapay'),
-                'default'     => __('Crypto, Card & PayPal', 'ivanov-payment-gateway-with-gembapay'),
+                'default'     => __('Card & PayPal', 'ivanov-payment-gateway-with-gembapay'),
                 'desc_tip'    => true,
             ),
             'description' => array(
                 'title'       => __('Description', 'ivanov-payment-gateway-with-gembapay'),
                 'type'        => 'textarea',
                 'description' => __('Payment method description shown to customers.', 'ivanov-payment-gateway-with-gembapay'),
-                'default'     => __('Pay securely with cryptocurrency, credit card, or PayPal.', 'ivanov-payment-gateway-with-gembapay'),
+                'default'     => __('Pay securely with your credit card or PayPal.', 'ivanov-payment-gateway-with-gembapay'),
                 'desc_tip'    => true,
             ),
             'api_key' => array(
@@ -106,7 +106,7 @@ class GembaPay_Gateway extends WC_Payment_Gateway {
             'payment_methods' => array(
                 'title'       => __('Accepted Payment Methods', 'ivanov-payment-gateway-with-gembapay'),
                 'type'        => 'title',
-                'description' => __('GembaPay supports: Cryptocurrency (ETH, BNB, POL, USDC, USDT), Credit/Debit Cards (via Stripe), and PayPal.', 'ivanov-payment-gateway-with-gembapay'),
+                'description' => __('GembaPay supports: Credit/Debit Cards (via Stripe), and PayPal.', 'ivanov-payment-gateway-with-gembapay'),
             ),
             'debug' => array(
                 'title'       => __('Debug Log', 'ivanov-payment-gateway-with-gembapay'),
@@ -216,11 +216,11 @@ class GembaPay_Gateway extends WC_Payment_Gateway {
      * @return bool|WP_Error
      */
     public function process_refund($order_id, $amount = null, $reason = '') {
-        // GembaPay crypto payments are non-custodial, refunds must be handled manually
+            // Refunds are handled by the payment provider that executed the charge
         // For Stripe/PayPal payments, refunds go through those platforms
         return new WP_Error(
             'gembapay_refund_error',
-            __('Refunds must be processed manually through your payment provider (Stripe/PayPal) or directly to the customer for crypto payments.', 'ivanov-payment-gateway-with-gembapay')
+            __('Refunds must be processed manually through your payment provider (Stripe/PayPal).', 'ivanov-payment-gateway-with-gembapay')
         );
     }
 
@@ -282,7 +282,7 @@ class GembaPay_Gateway extends WC_Payment_Gateway {
     }
 
     /**
-     * Get blockchain explorer URL
+     * Get the transaction explorer URL
      *
      * @param string $network Network name
      * @param string $tx_hash Transaction hash

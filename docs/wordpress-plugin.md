@@ -6,7 +6,7 @@
 
 ## Overview
 
-GembaPay for WooCommerce is a unified payment gateway enabling merchants to accept cryptocurrency, credit card (Stripe), and PayPal payments through a single integration.
+GembaPay for WooCommerce is a unified payment gateway enabling merchants to accept credit card (Stripe) and PayPal payments through a single integration.
 
 **Version:** 1.1.0  
 **License:** GPL v2 or later  
@@ -34,16 +34,14 @@ GembaPay for WooCommerce is a unified payment gateway enabling merchants to acce
 
 | Method | Settlement | Fees |
 |--------|------------|------|
-| Crypto (ETH, BNB, MATIC, USDC, USDT) | Direct to wallet (P2P) | 1% GembaPay |
 | Stripe (Cards, Apple Pay, Google Pay) | Stripe account | 1% GembaPay + Stripe fees |
 | PayPal (Balance, Bank, Pay Later) | PayPal account | 1% GembaPay + PayPal fees |
 
 **Key Benefits**
 
 - Unified checkout for all payment methods
-- Non-custodial crypto payments (P2P)
 - 86+ fiat currencies supported
-- Real-time Chainlink oracle rates
+- Real-time exchange rates for multi-currency pricing
 - Instant settlement
 - Secure hosted payment page
 
@@ -93,8 +91,8 @@ Navigate to: **WooCommerce → Settings → Payments → GembaPay**
 | Setting | Description | Example |
 |---------|-------------|---------|
 | Enable/Disable | Activate the payment gateway | Checked |
-| Title | Payment method name at checkout | Pay with Crypto or Card |
-| Description | Customer-facing description | Secure payment via crypto, card or PayPal |
+| Title | Payment method name at checkout | Pay with Card or PayPal |
+| Description | Customer-facing description | Secure payment by card or PayPal |
 | API URL | GembaPay API endpoint | https://api.gembapay.com |
 | API Key | Your merchant API key | gembapay_live_xxxx... |
 | Webhook Secret | Secret for signature verification | your_webhook_secret |
@@ -111,7 +109,6 @@ Navigate to: **WooCommerce → Settings → Payments → GembaPay**
 
 In the GembaPay Merchant Dashboard:
 
-1. **Crypto:** Configure wallet address for each network
 2. **Stripe:** Complete Stripe Connect onboarding
 3. **PayPal:** Complete PayPal Commerce Platform onboarding
 
@@ -124,7 +121,7 @@ In the GembaPay Merchant Dashboard:
 ```
 1. WooCommerce Checkout
    └─► Customer fills shipping/billing info
-   └─► Selects "Pay with Crypto, Card or PayPal"
+   └─► Selects "Pay with Card or PayPal"
    └─► Clicks "Place Order"
 
 2. Redirect to GembaPay
@@ -134,7 +131,6 @@ In the GembaPay Merchant Dashboard:
 3. Payment Processing
    ├─► Stripe: Enter card details, confirm
    ├─► PayPal: Login and approve
-   └─► Crypto: Connect wallet, select network/token, confirm
 
 4. Confirmation
    └─► Webhook sent to WooCommerce
@@ -150,7 +146,7 @@ WooCommerce ──► GembaPay API ──► Payment Page
       ┌─────────────┼─────────────┐
       │             │             │
       ▼             ▼             ▼
-   Stripe        PayPal      Blockchain
+   Stripe            PayPal
       │             │             │
       └─────────────┼─────────────┘
                     │
@@ -174,22 +170,6 @@ https://your-store.com/wp-json/gembapay/v1/webhook
 ```
 
 ### Webhook Payload
-
-**Crypto Payment:**
-```json
-{
-  "event": "payment.completed",
-  "payment": {
-    "id": "uuid",
-    "orderId": "WC-100-abc123",
-    "txHash": "0x...",
-    "usdAmount": 108.70,
-    "network": "polygon",
-    "customerAddress": "0x..."
-  },
-  "timestamp": "2026-01-22T12:00:00.000Z"
-}
-```
 
 **Stripe Payment:**
 ```json
@@ -244,8 +224,8 @@ if (!hash_equals($expected, (string) $signature)) {
 |----------|-------------|
 | _gembapay_order_id | GembaPay order identifier |
 | _gembapay_tx_hash | Transaction hash/ID |
-| _gembapay_network | Payment network (polygon/stripe/paypal) |
-| _gembapay_payment_provider | Provider type (crypto/stripe/paypal) |
+| _gembapay_network | Payment provider (stripe/paypal) |
+| _gembapay_payment_provider | Provider type (stripe/paypal) |
 | _gembapay_amount | USD amount |
 
 ### Order Status Mapping
@@ -259,9 +239,8 @@ if (!hash_equals($expected, (string) $signature)) {
 ### Admin Order View
 
 Payment details are displayed in the order admin page with:
-- Provider type (Crypto/Stripe/PayPal)
+- Provider type (Stripe/PayPal)
 - Network/Method used
-- Transaction hash with explorer link (for crypto)
 - USD amount
 
 ---
@@ -314,7 +293,7 @@ curl -I https://your-store.com/wp-json/gembapay/v1/webhook
 ```php
 add_filter('woocommerce_gateway_title', function($title, $gateway_id) {
     if ($gateway_id === 'gembapay') {
-        return 'Card, PayPal or Crypto';
+        return 'Card or PayPal';
     }
     return $title;
 }, 10, 2);

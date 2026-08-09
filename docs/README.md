@@ -6,12 +6,6 @@
 
 ## Documentation Index
 
-### Announcements
-
-| Document | Description |
-|----------|-------------|
-| [Mainnet Crypto Payments Suspended (2026-07-09)](mainnet-crypto-suspension-2026-07-09.md) | CASP/MiCA licensing — mainnet paused, testnets unaffected |
-
 ### Getting Started
 
 | Document | Description |
@@ -23,15 +17,8 @@
 
 | Document | Description |
 |----------|-------------|
-| [Smart Contracts](smart-contracts.md) | Contract architecture and functions |
-| [WordPress Plugin](wordpress-plugin.md) | WooCommerce installation |
-| [Webhooks](webhooks.md) | Webhook events and verification |
-
-### Security
-
-| Document | Description |
-|----------|-------------|
-| [Security Audit](security-audit.md) | Slither analysis results |
+| [WordPress Plugin](wordpress-plugin.md) | WooCommerce installation and configuration |
+| [Webhooks](webhooks.md) | Webhook events and signature verification |
 
 ---
 
@@ -42,11 +29,5 @@
 | Website | https://gembapay.com |
 | Merchant Dashboard | https://merchant-dashboard.gembapay.com |
 | API Base URL | https://api.gembapay.com |
-| Contract Addresses | [DEPLOYMENTS.md](../DEPLOYMENTS.md) |
+| Full API documentation | https://gembapay.com/docs |
 | Security Policy | [SECURITY.md](../SECURITY.md) |
-
----
-
-## Support
-
-For technical support, contact us at https://gembapay.com/contact

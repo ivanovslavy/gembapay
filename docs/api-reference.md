@@ -6,7 +6,7 @@
 
 ## Overview
 
-GembaPay API enables merchants to create payment requests and receive cryptocurrency and fiat payments through a unified interface.
+GembaPay API enables merchants to create payment requests and receive card and PayPal payments through a unified interface.
 
 **Base URL:** `https://api.gembapay.com`
 
@@ -104,7 +104,7 @@ Creates a new payment request for a customer.
   "amountOriginal": 100.00,
   "currencyOriginal": "EUR",
   "exchangeRate": 1.087,
-  "allowedMethods": ["crypto", "stripe", "paypal"],
+  "allowedMethods": ["stripe", "paypal"],
   "expiresAt": "2026-01-25T12:00:00.000Z"
 }
 ```
@@ -152,7 +152,7 @@ curl https://api.gembapay.com/api/merchant/payment/ORDER-12345 \
     "customerEmail": "buyer@example.com",
     "metadata": { "viaPaymentLink": true },
     "network": "bsc",
-    "paymentMode": "crypto",
+    "paymentMode": "stripe",
     "merchantAddress": "0x...",
     "isTestMode": false,
     "createdAt": "2026-01-25T12:00:00.000Z",
@@ -200,7 +200,7 @@ The endpoints below are public (no authentication) and are consumed by the hoste
   "openAmount": false,
   "currency": "EUR",
   "description": "Logo design",
-  "methods": ["crypto", "stripe", "paypal"],
+  "methods": ["stripe", "paypal"],
   "customerFields": {
     "name":  { "enabled": true,  "required": true },
     "email": { "enabled": true,  "required": true },
@@ -255,7 +255,7 @@ For a **single-use** link, this call reserves the link for the payer; a concurre
 {
   "orderId": "LNK-7f3a91c2d4e8",
   "checkoutPath": "/checkout/LNK-7f3a91c2d4e8",
-  "allowedMethods": ["crypto", "stripe", "paypal"]
+  "allowedMethods": ["stripe", "paypal"]
 }
 ```
 
@@ -265,7 +265,7 @@ The customer is then taken to `https://payment.gembapay.com{checkoutPath}` and c
 
 ## Subscriptions
 
-Subscriptions let a merchant bill customers automatically on a recurring schedule. A merchant creates **plans** (price, billing interval, accepted methods); each plan exposes a hosted subscribe link and an embeddable button. Recurring charges are executed by the **native subscription engines of Stripe and PayPal** — crypto subscriptions are not supported.
+Subscriptions let a merchant bill customers automatically on a recurring schedule. A merchant creates **plans** (price, billing interval, accepted methods); each plan exposes a hosted subscribe link and an embeddable button. Recurring charges are executed by the **native subscription engines of Stripe and PayPal**.
 
 Plan management endpoints require **merchant authentication** — an **API key** (for programmatic provisioning, recommended) or a dashboard JWT. The subscribe and manage flows used by the hosted pages are **public** (no authentication). Each successful billing cycle is recorded in the merchant's transactions and triggers the merchant's `subscription.payment` webhook — subscriptions use dedicated `subscription.*` events with a flat payload (no `orderId`), not `payment.completed` (see [Webhooks](webhooks.md#subscription-events)).
 
@@ -299,7 +299,7 @@ Plan management endpoints require **merchant authentication** — an **API key**
 | interval | string | Yes | Billing interval: `week`, `month`, or `year` |
 | intervalCount | number | No | Number of intervals per cycle (default 1) |
 | description | string | No | Plan description shown on the subscribe page |
-| allowedMethods | string[] | Yes | Accepted methods: any of `stripe`, `paypal` (no crypto) |
+| allowedMethods | string[] | Yes | Accepted methods: any of `stripe`, `paypal` |
 | trialDays | number | No | Free trial length in days |
 
 **Response:**
@@ -644,7 +644,7 @@ These endpoints are used by the payment page to process customer payments. No au
     "merchantName": "Example Store",
     "status": "pending",
     "paymentMethods": {
-      "crypto": true,
+      "stripe": true,
       "stripe": true,
       "paypal": true
     }
@@ -655,24 +655,6 @@ These endpoints are used by the payment page to process customer payments. No au
 ### Get Payment Status
 
 **Endpoint:** `GET /api/customer/payment/:orderId/status`
-
-**Response (Crypto):**
-```json
-{
-  "orderId": "ORDER-12345",
-  "status": "confirmed",
-  "amountUsd": "108.70",
-  "network": "bsc",
-  "paymentProvider": "crypto",
-  "payment": {
-    "txHash": "0x84579c019dc334474a9421072b633bdb...",
-    "tokenSymbol": "BNB",
-    "tokenAmount": "0.157892",
-    "confirmedAt": "2026-01-25T08:15:05.193Z",
-    "explorerUrl": "https://bscscan.com/tx/0x..."
-  }
-}
-```
 
 **Response (Stripe/PayPal):**
 ```json
@@ -696,35 +678,10 @@ These endpoints are used by the payment page to process customer payments. No au
 |--------|-------------|
 | pending | Awaiting payment |
 | processing | Payment in progress |
-| confirmed | Crypto payment confirmed on blockchain |
+| confirmed | Payment confirmed by the provider |
 | completed | Payment fully completed |
 | failed | Payment failed |
 | expired | Payment request expired |
-
-### Lock Quote (Crypto Native Tokens)
-
-**Endpoint:** `POST /api/customer/payment/:orderId/lock`
-
-**Request Body:**
-```json
-{
-  "network": "bsc",
-  "tokenAddress": "0x0000000000000000000000000000000000000000",
-  "customerAddress": "0xc45112B334822811f4418e2f13C2C80FF790C949"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "quote": {
-    "quoteId": "0x...",
-    "tokenAmount": "0.157892",
-    "expiresAt": "2026-01-25T08:20:00.000Z"
-  }
-}
-```
 
 ### Get Supported Currencies
 
@@ -816,14 +773,14 @@ These endpoints require API Key authentication.
     "totalRevenue": 15420.50,
     "totalTransactions": 342,
     "byProvider": {
-      "crypto": { "revenue": 8500.00, "count": 150 },
+      "stripe": { "revenue": 8500.00, "count": 150 },
       "stripe": { "revenue": 4200.50, "count": 120 },
       "paypal": { "revenue": 2720.00, "count": 72 }
     },
     "byNetwork": {
-      "ethereum": { "revenue": 3000.00, "count": 50 },
+      "card": { "revenue": 3000.00, "count": 50 },
       "bsc": { "revenue": 3500.00, "count": 60 },
-      "polygon": { "revenue": 2000.00, "count": 40 }
+      "paypal": { "revenue": 2000.00, "count": 40 }
     }
   }
 }
@@ -997,25 +954,6 @@ X-GembaPay-Merchant-Id: your-merchant-id
 X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
 ```
 
-### Webhook Payload (Crypto)
-
-```json
-{
-  "event": "payment.completed",
-  "payment": {
-    "id": "uuid",
-    "orderId": "ORDER-12345",
-    "txHash": "0x84579c019dc334474a9421072b633bdb...",
-    "network": "bsc",
-    "usdAmount": 108.70,
-    "customerAddress": "0xc45112B334822811f4418e2f13C2C80FF790C949",
-    "tokenAmount": "0.157892",
-    "status": "confirmed"
-  },
-  "timestamp": "2026-01-25T08:15:05.193Z"
-}
-```
-
 ### Webhook Payload (Stripe/PayPal)
 
 ```json
@@ -1057,7 +995,7 @@ function verifyWebhook(rawBody, signature, secret) {
 
 | Event | Description |
 |-------|-------------|
-| payment.completed | A one-off payment was processed (stripe / paypal / crypto) |
+| payment.completed | A one-off payment was processed (stripe / paypal) |
 | subscription.activated | A subscription became active |
 | subscription.payment | A recurring subscription cycle was paid |
 | subscription.payment_failed | A subscription cycle charge failed |
@@ -1102,7 +1040,6 @@ See [Webhooks Documentation](webhooks.md) for detailed information.
 | Invalid API key | API key is invalid or revoked |
 | Order not found | Payment request not found |
 | Payment already completed | Order has already been paid |
-| Quote expired | Crypto quote has expired, create new one |
 | Payment method not enabled | Stripe/PayPal not configured |
 
 ---
@@ -1128,4 +1065,3 @@ X-RateLimit-Reset: 1642680000
 
 - [Integration Guide](integration.md)
 - [Webhooks](webhooks.md)
-- [Smart Contracts](smart-contracts.md)

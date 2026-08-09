@@ -1,8 +1,8 @@
 # GembaPay
 
-**Unified payment gateway for crypto, cards, and PayPal.**
+**Unified payment gateway for cards and PayPal.**
 
-Accept ETH, BNB, POL, USDC, USDT, credit cards (via Stripe), and PayPal through a single API. Non-custodial crypto payments — funds go directly to your wallet via smart contract.
+Accept credit cards (via Stripe) and PayPal through a single API. Funds settle directly into the merchant's own connected account — GembaPay never holds your money.
 
 [![npm](https://img.shields.io/npm/v/gembapay)](https://www.npmjs.com/package/gembapay)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
@@ -11,11 +11,10 @@ Accept ETH, BNB, POL, USDC, USDT, credit cards (via Stripe), and PayPal through 
 
 ## Features
 
-- **One API, three payment methods** — Crypto, Stripe (cards/Apple Pay/Google Pay), PayPal
-- **Non-custodial crypto** — Payments route directly to your wallet via smart contracts
-- **86+ currencies** — Price in any fiat currency, settle in crypto or fiat
-- **Multi-chain** — Ethereum, BNB Smart Chain, Polygon
-- **Test mode built-in** — Testnets + sandbox environments for development
+- **One API, two payment methods** — Stripe (cards/Apple Pay/Google Pay) and PayPal
+- **Direct settlement** — Payments route straight into your own Stripe or PayPal account
+- **86+ currencies** — Price in any supported currency
+- **Test mode built-in** — Stripe and PayPal sandbox environments for development
 - **TypeScript support** — Full type definitions included
 - **Zero dependencies** — Uses only Node.js built-in modules
 
@@ -46,7 +45,7 @@ console.log(payment.paymentUrl);
 // → https://payment.gembapay.com/checkout/3f9c1e7a-2b4d-4c8e-9f10-a2b3c4d5e6f7
 
 console.log(payment.allowedMethods);
-// → ['crypto', 'stripe', 'paypal']
+// → ['stripe', 'paypal']
 ```
 
 ## Usage
@@ -133,7 +132,6 @@ Use test API keys (`gembapay_test_...`) for development. Test mode automatically
 
 | Method | Test Environment |
 |--------|-----------------|
-| Crypto | Sepolia, BSC Testnet, Polygon Amoy |
 | Stripe | Test cards (`4242 4242 4242 4242`) |
 | PayPal | Sandbox accounts |
 
@@ -212,7 +210,6 @@ app.listen(3000);
 
 | Method | Fee |
 |--------|-----|
-| Crypto (ETH, BNB, POL, USDC, USDT) | 1% |
 | Stripe (Cards, Apple Pay, Google Pay) | 1% + €0.20 + Stripe fees |
 | PayPal (Balance, Bank, Pay Later) | 1% + €0.20 + PayPal fees |
 

@@ -140,7 +140,7 @@ class GembaPay_Webhook {
         if (isset($payment['network'])) {
             $network = ucfirst($payment['network']);
             $note .= ' ' . sprintf(
-                /* translators: %s: blockchain network name */
+                /* translators: %s: payment network name */
                 __('Network: %s.', 'ivanov-payment-gateway-with-gembapay'),
                 $network
             );

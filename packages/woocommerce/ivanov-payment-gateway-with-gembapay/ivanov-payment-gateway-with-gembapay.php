@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Ivanov Payment Gateway with GembaPay
  * Plugin URI: https://gembapay.com/woocommerce
- * Description: Accept crypto, credit cards, and PayPal payments in WooCommerce with unified checkout via GembaPay. Non-custodial multi-chain gateway.
+ * Description: Accept credit card and PayPal payments in WooCommerce with a unified checkout via GembaPay. Funds settle directly to the merchant.
  * Version: 1.1.1
  * Author: GEMBA EOOD
  * Author URI: https://gembapay.com

@@ -6,7 +6,7 @@
 
 ## Overview
 
-GembaPay sends webhook notifications to your server when payment events occur. Webhooks allow you to automate order fulfillment and keep your system synchronized with payment status. All payment methods (Stripe, PayPal, and — where enabled — crypto) use the same webhook format.
+GembaPay sends webhook notifications to your server when payment events occur. Webhooks allow you to automate order fulfillment and keep your system synchronized with payment status. All payment methods (Stripe and PayPal) use the same webhook format.
 
 > **Signature format (read first):** GembaPay signs each webhook with **HMAC-SHA256 as a bare
 > hex string** (no `sha256=` prefix) in the `X-GembaPay-Signature` header, computed over the
@@ -52,7 +52,7 @@ A webhook secret is automatically generated when you set your webhook URL. Use t
 
 | Event | Description |
 |-------|-------------|
-| `payment.completed` | A one-off payment was successfully processed (Stripe, PayPal, or crypto) |
+| `payment.completed` | A one-off payment was successfully processed (Stripe or PayPal) |
 | `subscription.activated` | A subscription became active |
 | `subscription.payment` | A recurring subscription cycle was paid |
 | `subscription.payment_failed` | A subscription cycle charge failed |
@@ -80,32 +80,6 @@ X-GembaPay-Signature: 9f8b2c1a...   (bare HMAC-SHA256 hex, 64 chars, NO "sha256=
 X-GembaPay-Merchant-Id: your-merchant-id
 X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
 ```
-
-### Crypto Payment Webhook
-
-```json
-{
-  "event": "payment.completed",
-  "payment": {
-    "id": "uuid-payment-id",
-    "orderId": "ORDER-12345",
-    "txHash": "0x84579c019dc334474a9421072b633bdb981d0a1ab4aa4a2e48aba4189e05179d",
-    "network": "bsc",
-    "usdAmount": 108.70,
-    "amountOriginal": 100.00,
-    "currencyOriginal": "EUR",
-    "exchangeRate": 1.0870,
-    "customerAddress": "0xc45112B334822811f4418e2f13C2C80FF790C949",
-    "tokenAmount": "0.157892",
-    "tokenSymbol": "BNB",
-    "status": "confirmed",
-    "paymentProvider": "crypto"
-  },
-  "timestamp": "2026-01-25T08:15:05.193Z"
-}
-```
-
-**Network values:** `ethereum`, `bsc`, `polygon`
 
 ### Stripe Payment Webhook
 
@@ -155,7 +129,7 @@ X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
 }
 ```
 
-> **Original amount and currency** - every `payment.completed` webhook (crypto, Stripe and
+> **Original amount and currency** - every `payment.completed` webhook (Stripe and
 > PayPal) now also carries the amount and currency exactly as you requested it, next to the
 > settled `usdAmount`:
 >
@@ -253,7 +227,7 @@ app.post('/webhooks/gembapay',
     const { event, payment } = JSON.parse(req.body.toString('utf8'));
 
     if (event === 'payment.completed') {
-      fulfillOrder(payment.orderId);       // one-off payment (stripe / paypal / crypto)
+      fulfillOrder(payment.orderId);       // one-off payment (stripe / paypal)
     } else if (event === 'subscription.payment') {
       recordSubscriptionCycle(req.body);   // subscription cycle — no orderId, use eventId
     }
@@ -429,10 +403,6 @@ function handleWebhook(payload) {
           return handleStripePayment(payment);
         case 'paypal':
           return handlePayPalPayment(payment);
-        case 'ethereum':
-        case 'bsc':
-        case 'polygon':
-          return handleCryptoPayment(payment);
       }
       break;
     // Subscriptions use their own events + a flat payload (no `payment` wrapper):
@@ -447,12 +417,6 @@ function handleWebhook(payload) {
     default:
       console.log('Unknown event:', event);
   }
-}
-
-function handleCryptoPayment(payment) {
-  console.log(`Crypto payment: ${payment.tokenAmount} ${payment.tokenSymbol}`);
-  console.log(`TX: ${payment.txHash}`);
-  fulfillOrder(payment.orderId);
 }
 
 function handleStripePayment(payment) {
@@ -481,27 +445,6 @@ Use a tunnel service like ngrok for local development:
 ```bash
 ngrok http 3000
 # Use the ngrok URL as your webhook endpoint
-```
-
-### Test Payload
-
-```json
-{
-  "event": "payment.completed",
-  "payment": {
-    "id": "test_pay_123",
-    "orderId": "TEST-ORDER",
-    "amount": 10.00,
-    "usdAmount": 10.00,
-    "network": "bsc",
-    "paymentProvider": "crypto",
-    "txHash": "0xtest...",
-    "tokenAmount": "0.015",
-    "tokenSymbol": "BNB",
-    "status": "confirmed"
-  },
-  "timestamp": "2026-01-25T12:00:00.000Z"
-}
 ```
 
 ---

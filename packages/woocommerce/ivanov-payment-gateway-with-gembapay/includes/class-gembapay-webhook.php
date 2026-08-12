@@ -116,9 +116,6 @@ class GembaPay_Webhook {
             $order->update_meta_data('_gembapay_network', sanitize_text_field($payment['network']));
         }
 
-        if (isset($payment['txHash'])) {
-            $order->update_meta_data('_gembapay_tx_hash', sanitize_text_field($payment['txHash']));
-        }
 
         if (isset($payment['usdAmount'])) {
             $order->update_meta_data('_gembapay_usd_amount', sanitize_text_field($payment['usdAmount']));
@@ -146,13 +143,6 @@ class GembaPay_Webhook {
             );
         }
 
-        if (isset($payment['txHash'])) {
-            $note .= ' ' . sprintf(
-                /* translators: %s: transaction hash */
-                __('TX: %s', 'ivanov-payment-gateway-with-gembapay'),
-                substr($payment['txHash'], 0, 20) . '...'
-            );
-        }
 
         if (isset($payment['usdAmount'])) {
             $note .= ' ' . sprintf(
@@ -163,7 +153,7 @@ class GembaPay_Webhook {
         }
 
         // Complete the order
-        $order->payment_complete($payment['txHash'] ?? '');
+        $order->payment_complete($payment['reference'] ?? '');
         $order->add_order_note($note);
 
         self::log('Order ' . $order->get_id() . ' marked as paid');

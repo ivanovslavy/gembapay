@@ -71,7 +71,7 @@ res.redirect(payment.paymentUrl);
 const status = await gembapay.getPaymentStatus('ORDER-456');
 
 console.log(status.status);   // 'completed'
-console.log(status.network);  // 'bsc', 'stripe', 'paypal', etc.
+console.log(status.network);  // 'stripe', 'paypal'
 ```
 
 ### Webhook Verification

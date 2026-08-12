@@ -151,7 +151,7 @@ curl https://api.gembapay.com/api/merchant/payment/ORDER-12345 \
     "description": "Product purchase",
     "customerEmail": "buyer@example.com",
     "metadata": { "viaPaymentLink": true },
-    "network": "bsc",
+    "network": "stripe",
     "paymentMode": "stripe",
     "merchantAddress": "0x...",
     "isTestMode": false,
@@ -159,7 +159,7 @@ curl https://api.gembapay.com/api/merchant/payment/ORDER-12345 \
     "completedAt": "2026-01-25T12:05:00.000Z",
     "expiresAt": "2026-01-25T13:00:00.000Z",
     "payment": {
-      "txHash": "0x...",
+      "reference": "pi_3abc123...",
       "blockNumber": "45123456",
       "status": "confirmed",
       "confirmedAt": "2026-01-25T12:05:00.000Z"
@@ -779,7 +779,7 @@ These endpoints require API Key authentication.
     },
     "byNetwork": {
       "card": { "revenue": 3000.00, "count": 50 },
-      "bsc": { "revenue": 3500.00, "count": 60 },
+      "paypal": { "revenue": 3500.00, "count": 60 },
       "paypal": { "revenue": 2000.00, "count": 40 }
     }
   }
@@ -965,7 +965,7 @@ X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
     "usdAmount": 108.70,
     "currency": "USD",
     "status": "completed",
-    "txHash": "pi_3abc123...",
+    "reference": "pi_3abc123...",
     "network": "stripe",
     "paymentProvider": "stripe",
     "customerAddress": "customer@example.com",

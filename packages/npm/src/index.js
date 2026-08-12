@@ -43,7 +43,7 @@ class GembaPay {
    * @param {Object} params
    * @param {string} params.orderId - Your unique order identifier
    * @param {number} params.amount - Payment amount
-   * @param {string} [params.currency='USD'] - Currency code (86+ supported)
+   * @param {string} [params.currency='USD'] - Currency code (51+ supported)
    * @param {string} [params.description] - Payment description
    * @returns {Promise<Object>} Payment request with paymentUrl
    */

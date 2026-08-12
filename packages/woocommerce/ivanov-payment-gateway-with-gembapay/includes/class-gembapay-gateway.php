@@ -236,17 +236,13 @@ class GembaPay_Gateway extends WC_Payment_Gateway {
             return;
         }
 
-        $network = $order->get_meta('_gembapay_network');
-        $tx_hash = $order->get_meta('_gembapay_tx_hash');
+        $network   = $order->get_meta('_gembapay_network');
+        $reference = $order->get_meta('_gembapay_reference');
 
-        if ($tx_hash && $network) {
-            $explorer_url = $this->get_explorer_url($network, $tx_hash);
+        if ($reference && $network) {
             echo '<h2>' . esc_html__('Payment Details', 'ivanov-payment-gateway-with-gembapay') . '</h2>';
-            echo '<p><strong>' . esc_html__('Network:', 'ivanov-payment-gateway-with-gembapay') . '</strong> ' . esc_html(ucfirst($network)) . '</p>';
-            if ($explorer_url) {
-                echo '<p><strong>' . esc_html__('Transaction:', 'ivanov-payment-gateway-with-gembapay') . '</strong> ';
-                echo '<a href="' . esc_url($explorer_url) . '" target="_blank" rel="noopener">' . esc_html(substr($tx_hash, 0, 20)) . '...</a></p>';
-            }
+            echo '<p><strong>' . esc_html__('Paid with:', 'ivanov-payment-gateway-with-gembapay') . '</strong> ' . esc_html(ucfirst($network)) . '</p>';
+            echo '<p><strong>' . esc_html__('Reference:', 'ivanov-payment-gateway-with-gembapay') . '</strong> ' . esc_html($reference) . '</p>';
         }
     }
 
@@ -262,44 +258,19 @@ class GembaPay_Gateway extends WC_Payment_Gateway {
             return;
         }
 
-        $network = $order->get_meta('_gembapay_network');
-        $tx_hash = $order->get_meta('_gembapay_tx_hash');
+        $network   = $order->get_meta('_gembapay_network');
+        $reference = $order->get_meta('_gembapay_reference');
 
-        if ($tx_hash && $network) {
+        if ($reference && $network) {
             if ($plain_text) {
-                echo "\n" . esc_html__('Payment Network:', 'ivanov-payment-gateway-with-gembapay') . ' ' . esc_html(ucfirst($network)) . "\n";
-                echo esc_html__('Transaction Hash:', 'ivanov-payment-gateway-with-gembapay') . ' ' . esc_html($tx_hash) . "\n\n";
+                echo "\n" . esc_html__('Paid with:', 'ivanov-payment-gateway-with-gembapay') . ' ' . esc_html(ucfirst($network)) . "\n";
+                echo esc_html__('Reference:', 'ivanov-payment-gateway-with-gembapay') . ' ' . esc_html($reference) . "\n\n";
             } else {
-                $explorer_url = $this->get_explorer_url($network, $tx_hash);
                 echo '<h2>' . esc_html__('Payment Details', 'ivanov-payment-gateway-with-gembapay') . '</h2>';
-                echo '<p><strong>' . esc_html__('Network:', 'ivanov-payment-gateway-with-gembapay') . '</strong> ' . esc_html(ucfirst($network)) . '</p>';
-                if ($explorer_url) {
-                    echo '<p><strong>' . esc_html__('Transaction:', 'ivanov-payment-gateway-with-gembapay') . '</strong> ';
-                    echo '<a href="' . esc_url($explorer_url) . '">' . esc_html(substr($tx_hash, 0, 20)) . '...</a></p>';
-                }
+                echo '<p><strong>' . esc_html__('Paid with:', 'ivanov-payment-gateway-with-gembapay') . '</strong> ' . esc_html(ucfirst($network)) . '</p>';
+                echo '<p><strong>' . esc_html__('Reference:', 'ivanov-payment-gateway-with-gembapay') . '</strong> ' . esc_html($reference) . '</p>';
             }
         }
-    }
-
-    /**
-     * Get the transaction explorer URL
-     *
-     * @param string $network Network name
-     * @param string $tx_hash Transaction hash
-     * @return string|null
-     */
-    private function get_explorer_url($network, $tx_hash) {
-        $explorers = array(
-            'ethereum' => 'https://etherscan.io/tx/',
-            'bsc'      => 'https://bscscan.com/tx/',
-            'polygon'  => 'https://polygonscan.com/tx/',
-        );
-
-        if (isset($explorers[$network])) {
-            return $explorers[$network] . $tx_hash;
-        }
-
-        return null;
     }
 
     /**

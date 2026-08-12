@@ -524,7 +524,7 @@ app.post('/webhooks/gembapay', express.raw({ type: 'application/json' }), async 
 async function handlePaymentCompleted(payment) {
   await db.orders.update(
     { orderId: payment.orderId },
-    { status: 'paid', txHash: payment.txHash, network: payment.network,
+    { status: 'paid', reference: payment.reference, network: payment.network,
       paymentProvider: payment.paymentProvider, usdAmount: payment.usdAmount, paidAt: new Date() }
   );
   await fulfillOrder(payment.orderId);
@@ -555,7 +555,7 @@ X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
     "usdAmount": 108.70,
     "currency": "USD",
     "status": "completed",
-    "txHash": "pi_3abc123xyz...",
+    "reference": "pi_3abc123xyz...",
     "network": "stripe",
     "paymentProvider": "stripe",
     "customerAddress": "customer@example.com",
@@ -576,7 +576,7 @@ X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
     "usdAmount": 108.70,
     "currency": "USD",
     "status": "completed",
-    "txHash": "5GP12345ABC789...",
+    "reference": "5GP12345ABC789...",
     "network": "paypal",
     "paymentProvider": "paypal",
     "customerAddress": "payer@example.com",
@@ -938,7 +938,7 @@ try {
 ### User Experience
 
 - **Show payment methods upfront** - Display card and PayPal options
-- **Link to block explorer** - Let customers verify their transactions
+- **Show the provider reference** - Let customers match the charge on their statement
 - **Mobile-responsive checkout** - Ensure checkout works on all devices
 - **Clear error messages** - Help customers understand and recover from errors
 

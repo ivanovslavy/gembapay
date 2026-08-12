@@ -178,7 +178,7 @@ https://your-store.com/wp-json/gembapay/v1/webhook
   "payment": {
     "id": "uuid",
     "orderId": "WC-101-def456",
-    "txHash": "pi_...",
+    "reference": "pi_...",
     "usdAmount": 108.70,
     "network": "stripe"
   },
@@ -193,7 +193,7 @@ https://your-store.com/wp-json/gembapay/v1/webhook
   "payment": {
     "id": "uuid",
     "orderId": "WC-102-ghi789",
-    "txHash": "5GP...",
+    "reference": "5GP...",
     "usdAmount": 108.70,
     "network": "paypal"
   },
@@ -223,7 +223,7 @@ if (!hash_equals($expected, (string) $signature)) {
 | Meta Key | Description |
 |----------|-------------|
 | _gembapay_order_id | GembaPay order identifier |
-| _gembapay_tx_hash | Transaction hash/ID |
+| _gembapay_reference | Provider payment reference |
 | _gembapay_network | Payment provider (stripe/paypal) |
 | _gembapay_payment_provider | Provider type (stripe/paypal) |
 | _gembapay_amount | USD amount |

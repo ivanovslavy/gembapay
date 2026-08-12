@@ -11,7 +11,7 @@
   <circle cx="742" cy="222" r="82" fill="#ffffff" fill-opacity="0.05"/>
   <text x="54" y="106" font-family="DejaVu Sans" font-weight="bold" font-size="50" fill="#ffffff">GembaPay</text>
   <text x="57" y="144" font-family="DejaVu Sans" font-size="22" fill="#ffffff" fill-opacity="0.92">for WooCommerce</text>
-  <text x="57" y="194" font-family="DejaVu Sans" font-size="18" fill="#ffffff" fill-opacity="0.85">Crypto · Cards · PayPal — one unified checkout</text>
+  <text x="57" y="194" font-family="DejaVu Sans" font-size="18" fill="#ffffff" fill-opacity="0.85">Cards · PayPal — one unified checkout</text>
   <circle cx="672" cy="125" r="55" fill="#ffffff" fill-opacity="0.15"/>
   <path d="M645 126l18 18 36-37" stroke="#ffffff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 </svg>

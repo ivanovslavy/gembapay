@@ -15,7 +15,7 @@ declare module 'gembapay' {
     orderId: string;
     /** Payment amount */
     amount: number;
-    /** Currency code — 86+ supported (default: 'USD') */
+    /** Currency code — 51+ supported (default: 'USD') */
     currency?: string;
     /** Payment description */
     description?: string;
@@ -39,7 +39,7 @@ declare module 'gembapay' {
     network: 'stripe' | 'paypal';
     paymentProvider: 'stripe' | 'paypal';
     payment?: {
-      txHash?: string;
+      reference?: string;
       tokenSymbol?: string;
       tokenAmount?: string;
     };
@@ -50,7 +50,7 @@ declare module 'gembapay' {
     testMode?: boolean;
     payment: {
       orderId: string;
-      txHash?: string;
+      reference?: string;
       network: string;
       usdAmount: number;
       tokenAmount?: string;

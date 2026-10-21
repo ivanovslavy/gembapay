@@ -105,8 +105,8 @@ account**. Gemba EOOD never holds, controls, or has access to merchant or custom
 ```
 
 GembaPay sits between the merchant's system and the payment providers. It creates the payment,
-hosts the unified checkout page, records the order, and notifies the merchant. It is never in the
-path of the money itself.
+hosts the unified checkout page (English, Bulgarian, Spanish; light and dark theme), records the
+order, and notifies the merchant. It is never in the path of the money itself.
 
 ---
 
@@ -125,7 +125,9 @@ live exchange rates at the moment of checkout.
 | Cards via Stripe  | 1% + €0.20   | charged separately by Stripe     |
 | PayPal            | 1% + €0.20   | charged separately by PayPal     |
 
-No setup fees. No monthly fees. No withdrawal fees. Customers never pay a GembaPay fee.
+The fee is set in EUR; for a payment in another currency it is converted to that currency at the
+current exchange rate. No setup fees. No monthly fees. No withdrawal fees. Customers never pay a
+GembaPay fee.
 
 ---
 

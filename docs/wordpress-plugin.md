@@ -33,6 +33,7 @@ to date — paid, refunded, expired, disputed.
 ## Features
 
 - One checkout for cards (incl. Apple Pay, Google Pay, Link) via Stripe, and PayPal
+- The checkout page speaks the customer's browser language (English, Bulgarian, Spanish) and follows their light/dark setting
 - Funds settle directly into the merchant's own Stripe / PayPal account
 - **Refunds from the WooCommerce order screen** — full and partial
 - Refunds made in the GembaPay dashboard or directly in Stripe / PayPal are added to the order

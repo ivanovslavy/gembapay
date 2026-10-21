@@ -615,13 +615,16 @@ If your endpoint fails (non-2xx response), GembaPay retries in two phases:
 
 As an alternative to webhooks, you can poll for payment status:
 
-> **Note:** For server-side polling, prefer the authenticated `GET /api/merchant/payment-status/:orderId` (with your API key) over the public status endpoint shown below.
+> Poll from your **backend** with your API key — the authenticated endpoint returns only your own
+> orders. (The public `GET /api/customer/payment/:token/status` takes the access token from the
+> `paymentUrl`, not your `orderId`; a raw `orderId` returns 404.)
 
 ```javascript
 async function pollPaymentStatus(orderId, maxAttempts = 60) {
   for (let i = 0; i < maxAttempts; i++) {
     const response = await fetch(
-      `https://api.gembapay.com/api/customer/payment/${orderId}/status`
+      `https://api.gembapay.com/api/merchant/payment-status/${encodeURIComponent(orderId)}`,
+      { headers: { Authorization: `Bearer ${process.env.GEMBAPAY_API_KEY}` } }
     );
     const data = await response.json();
     
@@ -978,8 +981,8 @@ if (existing) return res.status(200).json({ received: true }); // Already proces
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/customer/payment/:orderId` | Get payment details |
-| GET | `/api/customer/payment/:orderId/status` | Check payment status |
+| GET | `/api/customer/payment/:token` | Public checkout details (`:token` = the access token from `paymentUrl`, not your orderId) |
+| GET | `/api/customer/payment/:token/status` | Public payment status (same `:token`) — from your backend use `GET /api/merchant/payment-status/:orderId` |
 | POST | `/api/customer/payment/:orderId/claim-nft` | Claim NFT gift |
 | GET | `/api/customer/currencies` | List supported currencies |
 | GET | `/api/customer/convert` | Convert currency |

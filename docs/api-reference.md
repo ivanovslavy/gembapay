@@ -119,7 +119,7 @@ available in KWD, BHD, OMR, JOD, GHS and VES (the checkout then offers PayPal on
 | Field | Description |
 |-------|-------------|
 | orderId | Your order identifier |
-| paymentUrl | URL to redirect customer for payment (redirect the customer here as-is; contains an unguessable token, not your orderId) |
+| paymentUrl | URL to redirect customer for payment (redirect the customer here as-is; contains an unguessable token, not your orderId). The page follows the customer's browser language (English, Bulgarian, Spanish) and device theme; to fix them append `lang=en\|bg\|es` and/or `theme=light\|dark` as query parameters |
 | amountUsd | Amount converted to USD |
 | amountOriginal | Original amount in requested currency |
 | currencyOriginal | Original currency code |
@@ -274,7 +274,7 @@ The customer is then taken to `https://payment.gembapay.com{checkoutPath}` and c
 
 ## Subscriptions
 
-Subscriptions let a merchant bill customers automatically on a recurring schedule. A merchant creates **plans** (price, billing interval, accepted methods); each plan exposes a hosted subscribe link and an embeddable button. Recurring charges are executed by the **native subscription engines of Stripe and PayPal**.
+Subscriptions let a merchant bill customers automatically on a recurring schedule. A merchant creates **plans** (price, billing interval, accepted methods) — via this API or on the **Subscriptions** page of the merchant dashboard (plans, subscribers, recurring revenue, cancel); each plan exposes a hosted subscribe link and an embeddable button. Recurring charges are executed by the **native subscription engines of Stripe and PayPal**.
 
 Plan management endpoints require **merchant authentication** — an **API key** (for programmatic provisioning, recommended) or a dashboard JWT. The subscribe and manage flows used by the hosted pages are **public** (no authentication). Each successful billing cycle is recorded in the merchant's transactions and triggers the merchant's `subscription.payment` webhook — subscriptions use dedicated `subscription.*` events with a flat payload (no `orderId`), not `payment.completed` (see [Webhooks](webhooks.md#subscription-events)).
 
@@ -304,8 +304,8 @@ Plan management endpoints require **merchant authentication** — an **API key**
 |-------|------|----------|-------------|
 | name | string | Yes | Plan name shown to customers (e.g. Basic, Pro, Ultimate) |
 | amount | number | Yes | Price per billing cycle |
-| currency | string | No | ISO 4217 currency code (base currency EUR; default EUR) |
-| interval | string | Yes | Billing interval: `week`, `month`, or `year` |
+| currency | string | No | ISO 4217 currency code (default: your account's default currency, else EUR) |
+| interval | string | Yes | Billing interval: `day`, `week`, `month`, or `year` |
 | intervalCount | number | No | Number of intervals per cycle (default 1) |
 | description | string | No | Plan description shown on the subscribe page |
 | allowedMethods | string[] | Yes | Accepted methods: any of `stripe`, `paypal` |
@@ -669,21 +669,29 @@ These endpoints are used by the payment page to process customer payments. No au
 
 ### Get Payment Status
 
-**Endpoint:** `GET /api/customer/payment/:orderId/status`
+**Endpoint:** `GET /api/customer/payment/:token/status` — public, no authentication.
 
-**Response (Stripe/PayPal):**
+`:token` is the **access token** from your `paymentUrl` (the last path segment), **not** your `orderId` — a raw
+`orderId` returns `404` (orderIds are unique only within one merchant account). From your backend, use the
+authenticated `GET /api/merchant/payment-status/:orderId` instead.
+
+**Response:**
 ```json
 {
-  "orderId": "ORDER-12345",
   "status": "completed",
-  "amountUsd": "108.70",
-  "network": "stripe",
-  "paymentProvider": "stripe",
   "payment": {
-    "providerPaymentId": "pi_3abc123...",
-    "tokenAmount": "108.70",
-    "confirmedAt": "2026-01-25T08:15:05.193Z"
-  }
+    "orderId": "ORDER-12345",
+    "status": "completed",
+    "network": "stripe",
+    "paymentMode": "quote",
+    "amountUsd": "108.70",
+    "isTestMode": false,
+    "completedAt": "2026-01-25T08:15:05.193Z",
+    "expiresAt": "2026-01-26T08:10:00.000Z",
+    "selectedMethod": "stripe"
+  },
+  "nftGiftEligible": false,
+  "nftGiftMinimum": 1
 }
 ```
 

@@ -61,7 +61,9 @@ const payment = await gembapay.createPayment({
 });
 
 // Redirect customer to unified checkout
-// Redirect to payment.paymentUrl as-is (unguessable token, not your orderId)
+// Redirect to payment.paymentUrl as-is (unguessable token, not your orderId).
+// The checkout follows the customer's browser language (en/bg/es) and device theme;
+// to fix them: payment.paymentUrl + '?lang=bg&theme=light'
 res.redirect(payment.paymentUrl);
 ```
 

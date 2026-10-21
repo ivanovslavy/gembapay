@@ -122,7 +122,7 @@ Recurring billing is handled by the **native subscription engines of Stripe and 
 
 ### Create a Plan
 
-Plans are created **programmatically via the API** — `POST /api/subscriptions` with your merchant API key. Provide the plan **name** (e.g. Basic, Pro, Ultimate), **price** (EUR), **billing interval** (weekly, monthly, or yearly), the methods to accept (**Stripe**, **PayPal**, or both), and optional free **trial days**. The response includes the plan’s hosted **subscribe link** and an **embeddable button**. See [Create a Plan](api-reference.md#create-a-plan) for the full request and response.
+Plans are created on the **Subscriptions** page of the merchant dashboard or **programmatically via the API** — `POST /api/subscriptions` with your merchant API key. Provide the plan **name** (e.g. Basic, Pro, Ultimate), **price** and **currency**, **billing interval** (every N days, weeks, months or years), the methods to accept (**Stripe**, **PayPal**, or both), and optional free **trial days**. The response includes the plan’s hosted **subscribe link** and an **embeddable button**. See [Create a Plan](api-reference.md#create-a-plan) for the full request and response.
 
 Pass an `externalRef` to make creation **idempotent** — re-running your provisioning code returns the existing plan instead of creating a duplicate. Create as many tiers as you like and manage them via the API.
 
@@ -257,25 +257,34 @@ Or open in a new window:
 window.open(paymentRequest.paymentUrl, '_blank');
 ```
 
+The checkout opens in the customer's browser language (English, Bulgarian or Spanish) and device theme. To fix
+them, append `lang=en|bg|es` and/or `theme=light|dark` to the `paymentUrl` query.
+
 ### Handle Webhook
 
 ```javascript
 // Express.js example
 const crypto = require('crypto');
 
-// Use the RAW body (express.raw) and compare against BARE hex (no "sha256=" prefix),
-// computed over the exact bytes received. See docs/webhooks.md for the full contract.
+// Verify X-GembaPay-Signature-V2 (timestamped — rejects replays) over the RAW body (express.raw).
+// Every event — Stripe and PayPal alike — carries it. See docs/webhooks.md for the full contract.
+const TOLERANCE_SEC = 300;
+
+function verifyGembaPay(rawBody, header, secret) {
+  if (!header) return false;
+  const parts = header.split(',').map((p) => p.trim());
+  const t = Number((parts.find((p) => p.startsWith('t=')) || '').slice(2));
+  const sigs = parts.filter((p) => p.startsWith('v1=')).map((p) => p.slice(3));
+  if (!t || !sigs.length || Math.abs(Date.now() / 1000 - t) > TOLERANCE_SEC) return false;
+  const expected = crypto.createHmac('sha256', secret).update(`${t}.${rawBody}`).digest('hex');
+  return sigs.some((s) => s.length === expected.length &&
+    crypto.timingSafeEqual(Buffer.from(s), Buffer.from(expected)));
+}
+
 app.post('/webhooks/gembapay',
   express.raw({ type: 'application/json' }),
   (req, res) => {
-    const signature = req.headers['x-gembapay-signature'] || '';
-    const expected = crypto
-      .createHmac('sha256', process.env.WEBHOOK_SECRET)
-      .update(req.body)                       // req.body is a Buffer of the raw bytes
-      .digest('hex');
-    const a = Buffer.from(signature, 'utf8');
-    const b = Buffer.from(expected, 'utf8');
-    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    if (!verifyGembaPay(req.body.toString('utf8'), req.get('X-GembaPay-Signature-V2'), process.env.GEMBAPAY_WEBHOOK_SECRET)) {
       return res.status(401).send('Invalid signature');
     }
 
@@ -292,10 +301,10 @@ app.post('/webhooks/gembapay',
 
 ### Check Payment Status
 
-For additional verification, check payment status via API:
+For additional verification, check payment status from your backend (API key, scoped to your account):
 
 ```bash
-curl https://api.gembapay.com/api/customer/payment/ORDER-12345/status
+curl -H "Authorization: Bearer $GEMBAPAY_API_KEY" https://api.gembapay.com/api/merchant/payment-status/ORDER-12345
 ```
 
 > **Note:** This public endpoint returns only non-sensitive status fields. For full order details (including `customerEmail`), use the authenticated `GET /api/merchant/payment/:orderId` with your API key.

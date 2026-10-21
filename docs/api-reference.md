@@ -22,8 +22,9 @@ GembaPay API enables merchants to create payment requests and receive card and P
 6. [Merchant Endpoints](#merchant-endpoints)
 7. [Stripe Connect](#stripe-connect)
 8. [PayPal Integration](#paypal-integration)
-9. [Webhooks](#webhooks)
-10. [Error Handling](#error-handling)
+9. [Merchant API v1 — Refunds and Payment Links](#merchant-api-v1--refunds-and-payment-links)
+10. [Webhooks](#webhooks)
+11. [Error Handling](#error-handling)
 
 ---
 
@@ -187,7 +188,7 @@ Each link is hosted at:
 https://payment.gembapay.com/link/<token>
 ```
 
-The endpoints below are public (no authentication) and are consumed by the hosted payment page. Creating and managing links is done in the dashboard, not via the API key.
+The endpoints below are public (no authentication) and are consumed by the hosted payment page. Links are created and managed in the dashboard, or from your own systems with an API key via [`/api/v1/payment-links`](#payment-links-api).
 
 ### Resolve a Payment Link
 
@@ -790,16 +791,18 @@ These endpoints require API Key authentication.
 }
 ```
 
-### Configure Webhook
+### Webhook settings (dashboard session)
 
-**Endpoint:** `PUT /api/merchant/webhook`
+These endpoints back the dashboard pages **Settings → Webhook Settings** and **Webhooks**. They use
+the dashboard login (JWT), not an API key.
 
-**Request Body:**
-```json
-{
-  "webhookUrl": "https://yoursite.com/webhooks/gembapay"
-}
-```
+| Method & path | What it does |
+|---------------|--------------|
+| `PUT /api/merchant/webhook` | `{ "webhookUrl": "https://…", "webhookSecret"?: "whsec_…" }` — the URL must be public `https://` on port 443 (no IP, no localhost/private network); a secret (32–128 chars) is generated when none is set. `webhookUrl: null` switches webhooks off. |
+| `GET /api/merchant/webhook/settings` | URL, whether a secret is set, rotation state, and every event with `enabled`, `defaultOn`, `locked`. |
+| `PUT /api/merchant/webhook/events` | `{ "events": ["payment.completed", "payment.refunded", …] }` — which events to receive. `payment.completed` is always kept on. |
+| `POST /api/merchant/webhook/rotate-secret` | New secret (returned once). The previous one keeps signing for 24 h (a second `v1=` in `X-GembaPay-Signature-V2`). |
+| `POST /api/merchant/webhook/test` | `{ "event": "payment.refunded" }` — sends a sample with `"test": true` to your URL; returns the HTTP status your endpoint answered. |
 
 ---
 
@@ -944,75 +947,226 @@ These endpoints require API Key authentication.
 
 ---
 
+## Merchant API v1 — Refunds and Payment Links
+
+Base path `https://api.gembapay.com/api/v1`, authenticated with your **API key**
+(`Authorization: Bearer gembapay_live_…` or `gembapay_test_…`).
+
+### Rules for every v1 call
+
+- **Mode comes from the key.** A test key sees and changes only test-mode objects, a live key only
+  live ones; an object of the other mode answers `404`.
+- **Permissions (scopes).** Reading is allowed for every key. Writing needs a permission on the key,
+  set in Dashboard → **API Keys** (when creating a key, or later with **Permissions**):
+
+  | Permission | Allows |
+  |------------|--------|
+  | `refunds:write` | `POST /api/v1/refunds` |
+  | `payment_links:write` | `POST`, `PATCH`, `DELETE /api/v1/payment-links` |
+
+  Keys created before October 2026 have no permissions until you add them. A missing permission
+  answers `403` with `"code": "missing_scope"`.
+- **`Idempotency-Key` is required on every `POST`** (8–255 characters: letters, digits, `_ - : .`;
+  use a new UUID per operation). Repeating a request with the same key returns the **first response**
+  (header `Idempotent-Replayed: true`) — so a timeout can be retried safely without refunding twice.
+  The same key with a different body answers `422`; while the first request is still running, `409`.
+  Keys are kept for 24 hours.
+- **Rate limit:** 60 requests per minute per API key (`429` with `"code": "rate_limited"`), in
+  addition to the general per-IP limit.
+- **Errors** are `{ "error": "<human message>", "code": "<machine code>" }`.
+
+### Refunds API
+
+#### Create a refund
+
+`POST /api/v1/refunds` — permission `refunds:write`, header `Idempotency-Key`.
+
+```bash
+curl -X POST https://api.gembapay.com/api/v1/refunds \
+  -H "Authorization: Bearer gembapay_live_..." \
+  -H "Idempotency-Key: 3f0c7c2e-6a51-4c0e-9f4b-2b1f2f7d9a10" \
+  -H "Content-Type: application/json" \
+  -d '{ "orderId": "ORDER-12345", "amount": "5.00", "reason": "One item returned" }'
+```
+
+| Field | Required | Meaning |
+|-------|----------|---------|
+| `orderId` | yes | Your order id of a **completed** card (Stripe) or PayPal payment. |
+| `amount` | no | Amount in the **payment currency**, as a string or number with at most 2 decimals (none for zero-decimal currencies such as JPY). **Omit it to refund everything still refundable.** |
+| `reason` | no | Up to 500 characters; shown to the customer where the provider supports it. |
+
+Partial refunds are allowed until the payment is fully refunded. The amount is checked against what
+is still refundable at the moment of the request, so two parallel requests can never refund more than
+was paid.
+
+Response `201`:
+
+```json
+{
+  "success": true,
+  "refund": {
+    "id": "8b4313fb-32d2-4e06-b957-f5007c91f709",
+    "orderId": "ORDER-12345",
+    "amount": 5,
+    "currency": "EUR",
+    "status": "succeeded",
+    "reason": "One item returned",
+    "source": "api",
+    "provider": "stripe",
+    "providerRefundId": "re_3UStkODUd5fD8ypl1zZx4kEM",
+    "failureReason": null,
+    "testMode": false,
+    "createdAt": "2026-10-21T07:15:52.104Z"
+  }
+}
+```
+
+`status` is `succeeded`, or `pending` for methods that settle later. A `payment.refunded` webhook is
+sent for every refund (when you have that event switched on).
+
+| Status / `code` | When |
+|-----------------|------|
+| `400 order_id_required`, `invalid_amount`, `invalid_reason` | Bad input. |
+| `400 amount_too_large` | More than the refundable remainder (the message says how much is left). |
+| `400 unsupported_provider` | Not a card or PayPal payment. |
+| `403 missing_scope` | The key lacks `refunds:write`. |
+| `404 payment_not_found` | No such order for this merchant **in this key's mode**. |
+| `409 already_refunded`, `not_refundable` | Fully refunded already, or the payment is not completed. |
+| `422 idempotency_key_reused` | The `Idempotency-Key` was used with a different body. |
+| `502 provider_error` | Stripe / PayPal refused the refund (the message has their reason). Nothing was refunded; you may retry with a **new** `Idempotency-Key`. |
+
+#### List refunds
+
+`GET /api/v1/refunds?orderId=ORDER-12345&limit=50` → `{ "success": true, "refunds": [ … ] }` — newest
+first, max 100, only this key's mode. `orderId` is optional.
+
+#### Get a refund
+
+`GET /api/v1/refunds/:id` → `{ "success": true, "refund": { … } }`.
+
+### Payment Links API
+
+The same links as in Dashboard → Payment Links, created from your own systems (CRM, invoicing, chat).
+A link is paid at `https://payment.gembapay.com/link/<token>`.
+
+#### Create a link
+
+`POST /api/v1/payment-links` — permission `payment_links:write`, header `Idempotency-Key`. The mode is
+the key's mode (a `mode` in the body is ignored).
+
+```json
+{
+  "amount": 49.90,
+  "currency": "EUR",
+  "description": "Workshop ticket",
+  "methods": ["stripe", "paypal"],
+  "multiUse": true,
+  "maxUses": 100,
+  "maxTotalAmount": null,
+  "expiresAt": "2026-12-31T23:59:59Z",
+  "customerFields": {
+    "name":  { "enabled": true,  "required": true },
+    "email": { "enabled": true,  "required": true },
+    "phone": { "enabled": false, "required": false },
+    "note":  { "enabled": true,  "required": false }
+  },
+  "merchantNotify": true
+}
+```
+
+| Field | Meaning |
+|-------|---------|
+| `amount` | Fixed amount, or omit / `null` to let the payer choose ("pay what you want"). |
+| `currency` | ISO code, default your account currency. |
+| `methods` | Subset of `stripe` (card, Apple Pay, Google Pay, Link) and `paypal` that is enabled on your account; default all of them. |
+| `multiUse`, `maxUses`, `maxTotalAmount` | Single-use (default) or reusable with optional limits. |
+| `expiresAt` | Optional, must be in the future. |
+| `customerFields` | Which customer details to collect — for each of `name`, `email`, `phone`, `note`: `{ "enabled", "required" }`. Omitted: name + email required, note optional, phone off. |
+| `merchantNotify` | Email you on every payment. |
+
+Response `201` — `{ "success": true, "paymentLink": { "id", "token", "amount", "currency", "description",
+"methods", "multiUse", "maxUses", "maxTotalAmount", "expiresAt", "isTestMode", "mode", "status",
+"rawStatus", "usedCount", "totalCollected", "createdAt", … } }`.
+
+#### List, get, disable, delete
+
+| Call | Permission | Result |
+|------|------------|--------|
+| `GET /api/v1/payment-links` | — | `{ "paymentLinks": [ … ] }` (this key's mode only) |
+| `GET /api/v1/payment-links/:id` | — | The link plus its completed payments (`uses`). |
+| `PATCH /api/v1/payment-links/:id` `{ "status": "disabled" \| "active" }` | `payment_links:write` | The updated link. |
+| `DELETE /api/v1/payment-links/:id` | `payment_links:write` | `{ "ok": true }` — payment history is kept. |
+
+---
+
 ## Webhooks
 
-GembaPay sends webhook notifications for payment events.
+GembaPay sends signed webhooks for payment, refund, dispute and subscription events. **Which events
+you receive is your choice** (Dashboard → Webhooks). Full guide with every payload, field and the
+right way to handle each event: **[webhooks.md](webhooks.md)**.
 
-### Webhook Headers
+### Headers
 
 ```
 Content-Type: application/json
 X-GembaPay-Event: payment.completed
-X-GembaPay-Signature: <bare HMAC-SHA256 hex, 64 chars, no "sha256=" prefix>
+X-GembaPay-Event-Id: evt_585aff3b-…          (your idempotency key, also in the body as eventId)
 X-GembaPay-Merchant-Id: your-merchant-id
-X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
+X-GembaPay-Signature-V2: t=<unix>,v1=<hex>  (verify this one)
+X-GembaPay-Signature: <hex>                 (legacy, no timestamp)
+X-GembaPay-Timestamp: 2026-10-21T07:45:06.000Z
 ```
 
-### Webhook Payload (Stripe/PayPal)
+### Signature V2
+
+`v1 = HMAC-SHA256(secret, "<t>.<raw body>")`, hex. Reject when `t` is more than 300 s from your
+clock; compare in constant time; accept any `v1` (two during a secret rotation). Node, Python and PHP
+code: [webhooks.md → Verifying the signature](webhooks.md#verifying-the-signature).
+
+### Event types
+
+| Event | Default | Description |
+|-------|---------|-------------|
+| `payment.completed` | always on | A one-off payment succeeded. |
+| `payment.refunded` | off | A full or partial refund (API, dashboard or provider dashboard). |
+| `payment.failed` | off | A payment attempt was declined; not final. |
+| `payment.expired` | off | The payment request expired unpaid; final. |
+| `dispute.created` | off | The customer opened a dispute / chargeback. |
+| `dispute.closed` | off | The dispute was decided (`won` / `lost`). |
+| `subscription.activated` | on | A subscription became active. |
+| `subscription.payment` | on | A recurring cycle was paid. |
+| `subscription.payment_failed` | on | A recurring cycle failed. |
+| `subscription.canceled` | on | A subscription ended. |
+
+### `payment.completed` payload
 
 ```json
 {
   "event": "payment.completed",
+  "eventId": "evt_585aff3b-b4a3-4334-bd79-bc3bc2034367",
+  "testMode": false,
+  "timestamp": "2026-10-21T07:45:06.425Z",
   "payment": {
     "orderId": "ORDER-12345",
-    "amount": 108.70,
-    "usdAmount": 108.70,
-    "currency": "USD",
+    "amount": 15,
+    "currency": "EUR",
+    "amountOriginal": 15,
+    "currencyOriginal": "EUR",
+    "usdAmount": 16.84,
+    "exchangeRate": 0.891,
     "status": "completed",
-    "reference": "pi_3abc123...",
+    "txHash": "pi_3USuCoDUd5fD8ypl3EG1nRti",
     "network": "stripe",
     "paymentProvider": "stripe",
     "paymentMethod": "google_pay",
-    "customerAddress": "customer@example.com",
-    "tokenAmount": 108.70
-  },
-  "timestamp": "2026-01-25T08:15:05.193Z"
+    "customerAddress": "stripe-customer",
+    "timestamp": "2026-10-21T07:45:06.425Z"
+  }
 }
 ```
 
-`paymentMethod`: `card` | `apple_pay` | `google_pay` | `link` | `null` (PayPal / before 2026-10-21) -
-see [webhooks.md](webhooks.md).
-
-### Signature Verification
-
-HMAC-SHA256, **bare hex (no `sha256=` prefix)**, over the **raw request body**. Full guide + Python/PHP: [webhooks.md](webhooks.md).
-
-```javascript
-const crypto = require('crypto');
-
-// rawBody = the exact bytes received (Buffer/string), NOT JSON.stringify(parsedBody)
-function verifyWebhook(rawBody, signature, secret) {
-  const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
-  const a = Buffer.from(signature || '', 'utf8');
-  const b = Buffer.from(expected, 'utf8');
-  return a.length === b.length && crypto.timingSafeEqual(a, b);
-}
-```
-
-### Event Types
-
-| Event | Description |
-|-------|-------------|
-| payment.completed | A one-off payment was processed (stripe / paypal) |
-| subscription.activated | A subscription became active |
-| subscription.payment | A recurring subscription cycle was paid |
-| subscription.payment_failed | A subscription cycle charge failed |
-| subscription.canceled | A subscription was cancelled |
-
-> `payment.failed` / `payment.expired` are **not currently emitted**. Subscription events use a
-> flat payload with **no `orderId`** (see [webhooks.md](webhooks.md#subscription-events)).
-
-See [Webhooks Documentation](webhooks.md) for detailed information.
+`paymentMethod`: `card` | `apple_pay` | `google_pay` | `link` | `null` (PayPal / before 2026-10-21).
+`txHash` is the provider's payment id (Stripe `pi_…` / PayPal capture id).
 
 ---
 
@@ -1059,6 +1213,7 @@ See [Webhooks Documentation](webhooks.md) for detailed information.
 | Payment creation | 100/minute |
 | Payment status | 300/minute |
 | Merchant endpoints | 60/minute |
+| Merchant API v1 (`/api/v1/*`) | 60/minute **per API key** |
 
 Rate limit headers are included in responses:
 ```

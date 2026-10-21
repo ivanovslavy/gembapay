@@ -4,7 +4,8 @@ const https = require('https');
 const crypto = require('crypto');
 
 const BASE_URL = 'https://api.gembapay.com';
-const VERSION = '1.1.1';
+const VERSION = '1.4.0';
+const SIGNATURE_TOLERANCE_SEC = 300;
 
 class GembaPayError extends Error {
   constructor(message, statusCode, code) {
@@ -104,7 +105,37 @@ class GembaPay {
   // ── Webhooks ─────────────────────────────────────────
 
   /**
-   * Verify webhook signature
+   * Verify a webhook's Signature-V2 header (recommended).
+   * Header: "t=<unix>,v1=<hex>[,v1=<hex>]", v1 = HMAC-SHA256(secret, "<t>.<raw body>").
+   * Rejects timestamps more than `toleranceSec` away from now (replay protection) and accepts any v1
+   * (two are sent for 24 h after a secret rotation).
+   * @param {string|Buffer} rawBody - Raw request body, exactly as received
+   * @param {string} header - Value of the X-GembaPay-Signature-V2 header
+   * @param {Object} [options]
+   * @param {number} [options.toleranceSec=300]
+   * @returns {boolean}
+   */
+  verifyWebhookV2(rawBody, header, { toleranceSec = SIGNATURE_TOLERANCE_SEC } = {}) {
+    if (!this.webhookSecret) {
+      throw new GembaPayError('webhookSecret is required for signature verification', null, 'missing_webhook_secret');
+    }
+    if (typeof header !== 'string' || !header) return false;
+    const parts = header.split(',').map((p) => p.trim());
+    const t = Number((parts.find((p) => p.startsWith('t=')) || '').slice(2));
+    const sigs = parts.filter((p) => p.startsWith('v1=')).map((p) => p.slice(3));
+    if (!Number.isInteger(t) || t <= 0 || !sigs.length) return false;
+    if (Math.abs(Math.floor(Date.now() / 1000) - t) > toleranceSec) return false;
+    const body = Buffer.isBuffer(rawBody) ? rawBody.toString('utf8') : String(rawBody);
+    const expected = Buffer.from(crypto.createHmac('sha256', this.webhookSecret).update(`${t}.${body}`).digest('hex'), 'utf8');
+    return sigs.some((s) => {
+      const got = Buffer.from(s, 'utf8');
+      return got.length === expected.length && crypto.timingSafeEqual(got, expected);
+    });
+  }
+
+  /**
+   * Verify the legacy X-GembaPay-Signature header (no timestamp → no replay protection).
+   * Prefer verifyWebhookV2 / parseWebhook, which use Signature-V2 whenever it is present.
    * @param {string|Buffer} payload - Raw request body
    * @param {string} signature - Value of x-gembapay-signature header
    * @returns {boolean} Whether the signature is valid
@@ -136,15 +167,19 @@ class GembaPay {
    * @param {Object} req - Express/HTTP request object
    * @returns {Object} Parsed webhook event { event, payment, testMode }
    */
-  parseWebhook(req) {
+  parseWebhook(req, { requireV2 = false } = {}) {
     const signature = req.headers['x-gembapay-signature'];
+    const signatureV2 = req.headers['x-gembapay-signature-v2'];
     // Prefer the RAW body — mount the route with express.raw({ type: 'application/json' }).
     // Falls back to req.rawBody, then a re-serialized parsed body (least reliable).
     const raw = Buffer.isBuffer(req.body) ? req.body
       : (req.rawBody != null ? req.rawBody
         : (typeof req.body === 'string' ? req.body : JSON.stringify(req.body)));
 
-    if (!this.verifyWebhook(raw, signature)) {
+    // Signature-V2 (timestamped) whenever GembaPay sent it; the legacy header only as a fallback.
+    const valid = signatureV2 ? this.verifyWebhookV2(raw, signatureV2)
+      : (!requireV2 && this.verifyWebhook(raw, signature));
+    if (!valid) {
       throw new GembaPayError('Invalid webhook signature', 401, 'invalid_signature');
     }
 
@@ -158,10 +193,10 @@ class GembaPay {
    * @param {Function} handler - async function(event) called on valid webhooks
    * @returns {Function} Express middleware
    */
-  webhookHandler(handler) {
+  webhookHandler(handler, options = {}) {
     return async (req, res) => {
       try {
-        const event = this.parseWebhook(req);
+        const event = this.parseWebhook(req, options);
         await handler(event);
         res.status(200).json({ received: true });
       } catch (err) {
@@ -174,9 +209,94 @@ class GembaPay {
     };
   }
 
+  // ── Refunds (API v1) ─────────────────────────────────
+
+  /**
+   * Refund a completed card or PayPal payment — fully or partly. The API key needs the
+   * "refunds:write" permission (Dashboard → API Keys).
+   * @param {Object} params
+   * @param {string} params.orderId - Your order id
+   * @param {number|string} [params.amount] - In the payment currency; omit to refund everything left
+   * @param {string} [params.reason]
+   * @param {Object} [options]
+   * @param {string} [options.idempotencyKey] - Pass the SAME key when you retry after a timeout, so the
+   *   refund cannot happen twice. Default: a new random key (no retry protection).
+   * @returns {Promise<Object>} The refund
+   */
+  async createRefund({ orderId, amount, reason } = {}, { idempotencyKey } = {}) {
+    if (!orderId) throw new GembaPayError('orderId is required', null, 'missing_param');
+    const body = { orderId };
+    if (amount !== undefined && amount !== null) body.amount = amount;
+    if (reason) body.reason = reason;
+    const res = await this._request('POST', '/api/v1/refunds', body, { 'Idempotency-Key': idempotencyKey || crypto.randomUUID() });
+    return res.refund;
+  }
+
+  /**
+   * List refunds (newest first; this key's mode only).
+   * @param {Object} [params] - { orderId, limit }
+   * @returns {Promise<Object[]>}
+   */
+  async listRefunds({ orderId, limit } = {}) {
+    const q = new URLSearchParams();
+    if (orderId) q.set('orderId', orderId);
+    if (limit) q.set('limit', String(limit));
+    const res = await this._request('GET', '/api/v1/refunds' + (q.toString() ? `?${q}` : ''));
+    return res.refunds;
+  }
+
+  /** @param {string} refundId @returns {Promise<Object>} */
+  async getRefund(refundId) {
+    if (!refundId) throw new GembaPayError('refundId is required', null, 'missing_param');
+    const res = await this._request('GET', `/api/v1/refunds/${encodeURIComponent(refundId)}`);
+    return res.refund;
+  }
+
+  // ── Payment links (API v1) ───────────────────────────
+
+  /**
+   * Create a payment link (paid at https://payment.gembapay.com/link/<token>). The API key needs the
+   * "payment_links:write" permission. Test keys create test links, live keys live links.
+   * @param {Object} params - { amount?, currency?, description?, methods?, multiUse?, maxUses?,
+   *   maxTotalAmount?, expiresAt?, customerFields?, merchantNotify? }
+   * @param {Object} [options] - { idempotencyKey }
+   * @returns {Promise<Object>} The payment link
+   */
+  async createPaymentLink(params = {}, { idempotencyKey } = {}) {
+    const res = await this._request('POST', '/api/v1/payment-links', params, { 'Idempotency-Key': idempotencyKey || crypto.randomUUID() });
+    return res.paymentLink;
+  }
+
+  /** @returns {Promise<Object[]>} Payment links of this key's mode */
+  async listPaymentLinks() {
+    const res = await this._request('GET', '/api/v1/payment-links');
+    return res.paymentLinks;
+  }
+
+  /** @param {string} id @returns {Promise<Object>} The link with its completed payments (uses) */
+  async getPaymentLink(id) {
+    if (!id) throw new GembaPayError('id is required', null, 'missing_param');
+    const res = await this._request('GET', `/api/v1/payment-links/${encodeURIComponent(id)}`);
+    return res.paymentLink;
+  }
+
+  /** @param {string} id @param {'active'|'disabled'} status @returns {Promise<Object>} */
+  async setPaymentLinkStatus(id, status) {
+    if (!id) throw new GembaPayError('id is required', null, 'missing_param');
+    if (!['active', 'disabled'].includes(status)) throw new GembaPayError('status must be "active" or "disabled"', null, 'invalid_param');
+    const res = await this._request('PATCH', `/api/v1/payment-links/${encodeURIComponent(id)}`, { status });
+    return res.paymentLink;
+  }
+
+  /** Delete a link (its payment history is kept). @param {string} id */
+  async deletePaymentLink(id) {
+    if (!id) throw new GembaPayError('id is required', null, 'missing_param');
+    return this._request('DELETE', `/api/v1/payment-links/${encodeURIComponent(id)}`);
+  }
+
   // ── Internal ─────────────────────────────────────────
 
-  _request(method, path, body) {
+  _request(method, path, body, extraHeaders = {}) {
     return new Promise((resolve, reject) => {
       const url = new URL(this.baseUrl + path);
 
@@ -189,6 +309,7 @@ class GembaPay {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
           'User-Agent': `gembapay-node/${VERSION}`,
+          ...extraHeaders,
         },
       };
 

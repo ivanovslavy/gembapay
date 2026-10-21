@@ -76,9 +76,12 @@ console.log(status.network);  // 'stripe', 'paypal'
 
 ### Webhook Verification
 
-GembaPay signs every webhook with HMAC-SHA256 over the **raw request body** and sends the
-signature as **bare hex** (no `sha256=` prefix) in the `X-GembaPay-Signature` header.
-`verifyWebhook`, `parseWebhook` and `webhookHandler` check exactly that. Mount the webhook route
+GembaPay signs every webhook. `parseWebhook` and `webhookHandler` verify the timestamped
+**`X-GembaPay-Signature-V2`** header (`t=<unix>,v1=<hex>`, HMAC-SHA256 over `"<t>.<raw body>"`) and
+reject requests older than 5 minutes — a copied webhook cannot be replayed. Only when a request has no
+V2 header do they fall back to the legacy `X-GembaPay-Signature` (bare hex over the raw body); pass
+`{ requireV2: true }` to refuse legacy-only requests. `verifyWebhookV2(rawBody, header)` and
+`verifyWebhook(rawBody, signature)` are available for manual checks. Mount the webhook route
 with `express.raw({ type: 'application/json' })` so the SDK sees the exact bytes that were signed
 (a parsed `express.json()` body is re-serialized as a fallback, which is less reliable).
 Subscription cycles arrive as `subscription.payment` (flat payload, no `orderId`), not
@@ -116,6 +119,57 @@ app.post('/webhooks/gembapay', express.raw({ type: 'application/json' }), (req, 
   
   res.json({ received: true });
 });
+```
+
+Which events you receive is set in the dashboard (Webhooks): `payment.completed` (always),
+`payment.refunded`, `payment.failed`, `payment.expired`, `dispute.created`, `dispute.closed` and
+`subscription.*`. Every event has an `eventId` — process each one once. Payloads and handling advice for
+each event: [docs/webhooks.md](../../docs/webhooks.md).
+
+```javascript
+app.post('/webhooks/gembapay', express.raw({ type: 'application/json' }),
+  gembapay.webhookHandler(async (event) => {
+    if (event.test) return;                       // dashboard "Send test"
+    switch (event.event) {
+      case 'payment.completed': return markPaid(event.payment.orderId);
+      case 'payment.refunded':  return recordRefund(event.refund, event.payment.fullyRefunded);
+      case 'payment.expired':   return cancelIfUnpaid(event.payment.orderId);
+      case 'dispute.created':   return holdOrder(event.dispute.orderId);
+    }
+  })
+);
+```
+
+### Refunds
+
+Full or partial refunds of card (incl. Apple Pay / Google Pay) and PayPal payments. The API key needs
+the **`refunds:write`** permission (Dashboard → API Keys → Permissions).
+
+```javascript
+// partial refund — pass your own idempotency key and reuse it if you retry after a timeout
+const refund = await gembapay.createRefund(
+  { orderId: 'ORDER-123', amount: '5.00', reason: 'One item returned' },
+  { idempotencyKey: `refund-ORDER-123-item-7` }
+);
+console.log(refund.id, refund.status);          // 'succeeded' | 'pending'
+
+await gembapay.createRefund({ orderId: 'ORDER-123' });   // everything still refundable
+const refunds = await gembapay.listRefunds({ orderId: 'ORDER-123' });
+```
+
+### Payment Links
+
+Create hosted payment links from your own system. The API key needs **`payment_links:write`**; test
+keys create test links, live keys live links.
+
+```javascript
+const link = await gembapay.createPaymentLink({
+  amount: 49.9, currency: 'EUR', description: 'Workshop ticket', multiUse: true, maxUses: 100,
+});
+console.log(`https://payment.gembapay.com/link/${link.token}`);
+
+await gembapay.setPaymentLinkStatus(link.id, 'disabled');
+await gembapay.deletePaymentLink(link.id);
 ```
 
 ### Transactions & Stats
@@ -204,9 +258,16 @@ app.listen(3000);
 | `getPaymentStatus(orderId)` | Check payment status |
 | `listTransactions(params?)` | List merchant transactions |
 | `getStats()` | Get merchant statistics |
-| `verifyWebhook(payload, signature)` | Verify webhook signature |
-| `parseWebhook(req)` | Parse & verify Express request |
-| `webhookHandler(fn)` | Express webhook middleware |
+| `createRefund(params, { idempotencyKey }?)` | Full / partial refund (`refunds:write`) |
+| `listRefunds({ orderId?, limit? })` | List refunds |
+| `getRefund(id)` | Get a refund |
+| `createPaymentLink(params, { idempotencyKey }?)` | Create a payment link (`payment_links:write`) |
+| `listPaymentLinks()` / `getPaymentLink(id)` | Read payment links |
+| `setPaymentLinkStatus(id, status)` / `deletePaymentLink(id)` | Disable / enable / delete a link |
+| `verifyWebhookV2(rawBody, header, { toleranceSec }?)` | Verify `X-GembaPay-Signature-V2` |
+| `verifyWebhook(rawBody, signature)` | Verify the legacy signature |
+| `parseWebhook(req, { requireV2 }?)` | Parse & verify an Express request (V2 when present) |
+| `webhookHandler(fn, { requireV2 }?)` | Express webhook middleware |
 
 ## Fee Structure
 

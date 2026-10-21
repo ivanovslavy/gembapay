@@ -1,6 +1,6 @@
 {
   "name": "gembapay",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "description": "GembaPay \u2014 unified payment gateway for Stripe card payments and PayPal. Funds settle directly to the merchant.",
   "main": "src/index.js",
   "types": "src/index.d.ts",

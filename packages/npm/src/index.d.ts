@@ -45,6 +45,9 @@ declare module 'gembapay' {
     };
   }
 
+  /** Stripe may add other values over time - treat unknown ones like 'card'. */
+  export type PaymentMethod = 'card' | 'apple_pay' | 'google_pay' | 'link' | (string & {});
+
   export interface WebhookEvent {
     event: 'payment.completed' | 'payment.failed';
     testMode?: boolean;
@@ -55,6 +58,8 @@ declare module 'gembapay' {
       usdAmount: number;
       tokenAmount?: string;
       paymentProvider?: string;
+      /** How the customer paid. null for PayPal and payments recorded before 2026-10-21. */
+      paymentMethod?: PaymentMethod | null;
     };
     timestamp: string;
   }

@@ -98,6 +98,7 @@ X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
     "reference": "pi_3abc123xyz...",
     "network": "stripe",
     "paymentProvider": "stripe",
+    "paymentMethod": "google_pay",
     "customerAddress": "customer@example.com",
     "tokenAmount": 108.70
   },
@@ -122,6 +123,7 @@ X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
     "reference": "5GP12345ABC789...",
     "network": "paypal",
     "paymentProvider": "paypal",
+    "paymentMethod": null,
     "customerAddress": "payer@example.com",
     "tokenAmount": 108.70
   },
@@ -141,6 +143,19 @@ X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
 >
 > Verify payments against `amountOriginal` + `currencyOriginal` (what you asked for), not
 > only `usdAmount`.
+
+> **Payment method** - every `payment.completed` webhook also tells you how the customer paid:
+>
+> | `paymentMethod` | Meaning |
+> |-----------------|---------|
+> | `card` | Card entered on the Stripe checkout page |
+> | `apple_pay` | Card paid through Apple Pay |
+> | `google_pay` | Card paid through Google Pay |
+> | `link` | Paid with Link by Stripe |
+> | `null` | PayPal, or a payment recorded before 2026-10-21 |
+>
+> Stripe may add other values over time - treat an unknown value like `card`. The field is
+> informational: fulfil on `payment.completed` as before, whatever the method.
 
 > **Note:** `payment.failed` and `payment.expired` are **not currently emitted** by GembaPay.
 > Do not build fulfilment logic around them; rely on `payment.completed` (success) and, for
@@ -175,10 +190,14 @@ Subscriptions are billed recurringly through the **native subscription engines o
   "status": "active",
   "amount": 19.99,
   "currency": "EUR",
+  "paymentMethod": "card",
   "isTestMode": false,
   "timestamp": "2026-06-29T10:00:05.193Z"
 }
 ```
+
+> `paymentMethod` on `subscription.payment` has the same values as on `payment.completed`
+> (`card`, `apple_pay`, `google_pay`, `link`, or `null` for PayPal / when unknown).
 
 > **Idempotency:** use `eventId` (or `subscriptionId` + the cycle `timestamp`) as the idempotency
 > key so a re-delivered subscription webhook fulfils a cycle only once. There is **no** `orderId`

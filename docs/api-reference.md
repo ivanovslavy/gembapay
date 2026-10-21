@@ -162,11 +162,15 @@ curl https://api.gembapay.com/api/merchant/payment/ORDER-12345 \
       "reference": "pi_3abc123...",
       "blockNumber": "45123456",
       "status": "confirmed",
+      "paymentMethod": "google_pay",
       "confirmedAt": "2026-01-25T12:05:00.000Z"
     }
   }
 }
 ```
+
+`payment.paymentMethod` is how the customer paid: `card`, `apple_pay`, `google_pay`, `link`, or
+`null` (PayPal, or a payment recorded before 2026-10-21). Same values as in the webhook.
 
 **Status-only variant:** `GET /api/merchant/payment-status/:orderId` (same auth + ownership scoping) returns
 `{ success, orderId, status, amountUsd, network, completedAt, isTestMode }`.
@@ -968,12 +972,16 @@ X-GembaPay-Timestamp: 2026-01-25T08:15:05.193Z
     "reference": "pi_3abc123...",
     "network": "stripe",
     "paymentProvider": "stripe",
+    "paymentMethod": "google_pay",
     "customerAddress": "customer@example.com",
     "tokenAmount": 108.70
   },
   "timestamp": "2026-01-25T08:15:05.193Z"
 }
 ```
+
+`paymentMethod`: `card` | `apple_pay` | `google_pay` | `link` | `null` (PayPal / before 2026-10-21) -
+see [webhooks.md](webhooks.md).
 
 ### Signature Verification
 

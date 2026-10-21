@@ -96,7 +96,7 @@ Creates a new payment request for a customer.
 **Whole-unit currencies.** JPY, KRW, VND, CLP, PYG, ISK and UGX have no decimal places: send a whole
 amount (`1000`, not `1000.50`) — otherwise the request is refused with `400`. Card payments are not
 available in KWD, BHD, OMR, JOD, GHS and VES (the checkout then offers PayPal only, charged in EUR).
-| orderId | string | Yes | Unique order identifier from your system |
+| orderId | string | Yes | Unique order identifier from your system — unique within **your** GembaPay account (another merchant may use the same value). Reusing one of your own orderIds answers `409 Order ID already exists` |
 | description | string | No | Payment description shown to customer |
 
 **Response:**

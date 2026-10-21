@@ -57,6 +57,13 @@ In your merchant dashboard:
 2. **Stripe:** Complete Stripe Connect onboarding (Settings → Payment Methods → Stripe)
 3. **PayPal:** Complete PayPal Commerce Platform onboarding (Settings → Payment Methods → PayPal)
 
+**Apple Pay, Google Pay and Link** come with Stripe — there is nothing to set up. The Stripe
+checkout page shows the **Apple Pay** button in Safari (iPhone, iPad, Mac) and the **Google Pay**
+button in Chrome and on Android, but only to customers who have a card saved in that wallet;
+everyone else sees the card form. If Stripe recognises the customer as a **Link** user, it opens
+Link first — the customer taps **Pay without Link** to use Apple Pay or Google Pay instead.
+Your dashboard shows which one was used, e.g. `stripe · Google Pay`.
+
 ### Step 4: Generate API Key
 
 1. Go to Settings > API Keys

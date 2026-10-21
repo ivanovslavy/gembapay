@@ -76,18 +76,20 @@ console.log(status.network);  // 'stripe', 'paypal'
 
 ### Webhook Verification
 
-> **⚠️ SDK update required.** The live GembaPay backend signs webhooks as **bare hex** (no
-> `sha256=` prefix) over the **raw request body**. The current `verifyWebhook`/`webhookHandler`
-> in this SDK build expect a `sha256=` prefix and hash the parsed body, so they reject genuine
-> webhooks until the SDK is updated. Until then, verify manually against the raw body per
-> [docs/webhooks.md](../../docs/webhooks.md#signature-verification). Subscription cycles arrive as
-> `subscription.payment` (flat payload, no `orderId`), not `payment.completed`.
+GembaPay signs every webhook with HMAC-SHA256 over the **raw request body** and sends the
+signature as **bare hex** (no `sha256=` prefix) in the `X-GembaPay-Signature` header.
+`verifyWebhook`, `parseWebhook` and `webhookHandler` check exactly that. Mount the webhook route
+with `express.raw({ type: 'application/json' })` so the SDK sees the exact bytes that were signed
+(a parsed `express.json()` body is re-serialized as a fallback, which is less reliable).
+Subscription cycles arrive as `subscription.payment` (flat payload, no `orderId`), not
+`payment.completed`. Each `payment.completed` also carries `payment.paymentMethod`
+(`card`, `apple_pay`, `google_pay`, `link`, or `null` for PayPal).
 
 ```javascript
 const express = require('express');
 const app = express();
 
-app.post('/webhooks/gembapay', express.json(), 
+app.post('/webhooks/gembapay', express.raw({ type: 'application/json' }),
   gembapay.webhookHandler(async (event) => {
     if (event.event === 'payment.completed') {
       console.log(`✓ Order ${event.payment.orderId} paid`);
@@ -101,14 +103,15 @@ app.post('/webhooks/gembapay', express.json(),
 Or verify manually:
 
 ```javascript
-app.post('/webhooks/gembapay', express.json(), (req, res) => {
+app.post('/webhooks/gembapay', express.raw({ type: 'application/json' }), (req, res) => {
   const signature = req.headers['x-gembapay-signature'];
-  
+
+  // req.body is the raw Buffer here - verify first, parse after
   if (!gembapay.verifyWebhook(req.body, signature)) {
     return res.status(401).send('Invalid signature');
   }
-  
-  const { event, payment, testMode } = req.body;
+
+  const { event, payment } = JSON.parse(req.body.toString('utf8'));
   // Process event...
   
   res.json({ received: true });
@@ -144,7 +147,6 @@ const gembapay = new GembaPay({
 console.log(gembapay.isTestMode); // true
 ```
 
-Claim free test tokens at [Developer Resources](https://gembapay.com/developers).
 
 ## Express.js Example
 
@@ -170,8 +172,8 @@ app.post('/api/checkout', express.json(), async (req, res) => {
   }
 });
 
-// Webhook endpoint
-app.post('/webhooks/gembapay', express.json(),
+// Webhook endpoint - raw body, so the signature is checked on the exact bytes GembaPay signed
+app.post('/webhooks/gembapay', express.raw({ type: 'application/json' }),
   gembapay.webhookHandler(async (event) => {
     if (event.event === 'payment.completed') {
       await fulfillOrder(event.payment.orderId);

@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Ivanov Payment Gateway with GembaPay
  * Plugin URI: https://gembapay.com/woocommerce
- * Description: Accept credit card and PayPal payments in WooCommerce with a unified checkout via GembaPay. Funds settle directly to the merchant.
- * Version: 1.2.1
+ * Description: Accept cards, Apple Pay, Google Pay and PayPal in WooCommerce with the GembaPay checkout. Funds settle directly to the merchant; refunds, expired payments and disputes update the order automatically.
+ * Version: 1.3.0
  * Author: GEMBA EOOD
  * Author URI: https://gembapay.com
  * License: GPL-2.0-or-later
@@ -12,16 +12,16 @@
  * Domain Path: /languages
  * Requires Plugins: woocommerce
  * Requires at least: 6.0
- * Tested up to: 6.9
+ * Tested up to: 7.1
  * Requires PHP: 8.0
  * WC requires at least: 7.0
- * WC tested up to: 9.5
+ * WC tested up to: 11.2
  */
 
 defined('ABSPATH') || exit;
 
 // Plugin constants
-define('GEMBAPAY_VERSION', '1.1.1');
+define('GEMBAPAY_VERSION', '1.3.0');
 define('GEMBAPAY_PLUGIN_FILE', __FILE__);
 define('GEMBAPAY_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('GEMBAPAY_PLUGIN_URL', plugin_dir_url(__FILE__));
@@ -57,8 +57,6 @@ function gembapay_init() {
         return;
     }
 
-    // Load text domain
-
     // Include required files
     require_once GEMBAPAY_PLUGIN_DIR . 'includes/class-gembapay-api.php';
     require_once GEMBAPAY_PLUGIN_DIR . 'includes/class-gembapay-gateway.php';
@@ -88,8 +86,8 @@ function gembapay_add_gateway($gateways) {
  */
 function gembapay_plugin_links($links) {
     $plugin_links = array(
-        '<a href="' . admin_url('admin.php?page=wc-settings&tab=checkout&section=gembapay') . '">' . __('Settings', 'ivanov-payment-gateway-with-gembapay') . '</a>',
-        '<a href="https://gembapay.com/docs" target="_blank">' . __('Docs', 'ivanov-payment-gateway-with-gembapay') . '</a>',
+        '<a href="' . esc_url(admin_url('admin.php?page=wc-settings&tab=checkout&section=gembapay')) . '">' . esc_html__('Settings', 'ivanov-payment-gateway-with-gembapay') . '</a>',
+        '<a href="' . esc_url('https://gembapay.com/docs') . '" target="_blank" rel="noopener noreferrer">' . esc_html__('Docs', 'ivanov-payment-gateway-with-gembapay') . '</a>',
     );
     return array_merge($plugin_links, $links);
 }

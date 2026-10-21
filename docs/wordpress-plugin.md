@@ -1,4 +1,4 @@
-# GembaPay WordPress Plugin
+# GembaPay for WooCommerce (WordPress plugin)
 
 [Back to Documentation](README.md) | [Back to Main README](../README.md)
 
@@ -6,13 +6,14 @@
 
 ## Overview
 
-GembaPay for WooCommerce is a unified payment gateway enabling merchants to accept credit card (Stripe) and PayPal payments through a single integration.
+**Plugin:** Ivanov Payment Gateway with GembaPay — slug `ivanov-payment-gateway-with-gembapay`
+**Version:** 1.3.0 · WordPress 6.0+ (tested up to 7.1) · WooCommerce 7.0+ (tested up to 11.2) · PHP 8.0+
+**Download:** [WordPress.org plugin directory](https://wordpress.org/plugins/ivanov-payment-gateway-with-gembapay/) or
+[gembapay.com/ivanov-payment-gateway-with-gembapay.zip](https://gembapay.com/ivanov-payment-gateway-with-gembapay.zip)
 
-**Version:** 1.1.0  
-**License:** GPL v2 or later  
-**Requires WordPress:** 5.8+  
-**Requires WooCommerce:** 5.0+  
-**Requires PHP:** 7.4+
+The plugin adds GembaPay as a WooCommerce payment method. The customer pays on the hosted GembaPay
+checkout by card, Apple Pay, Google Pay, Link or PayPal; signed webhooks keep the WooCommerce order up
+to date — paid, refunded, expired, disputed.
 
 ---
 
@@ -21,306 +22,151 @@ GembaPay for WooCommerce is a unified payment gateway enabling merchants to acce
 1. [Features](#features)
 2. [Installation](#installation)
 3. [Configuration](#configuration)
-4. [Payment Flow](#payment-flow)
-5. [Webhook Setup](#webhook-setup)
-6. [Order Management](#order-management)
-7. [Troubleshooting](#troubleshooting)
+4. [Webhooks](#webhooks)
+5. [What happens to the order](#what-happens-to-the-order)
+6. [Refunds](#refunds)
+7. [Order data](#order-data)
+8. [Troubleshooting](#troubleshooting)
 
 ---
 
 ## Features
 
-**Triple Payment System**
-
-| Method | Settlement | Fees |
-|--------|------------|------|
-| Stripe (Cards, Apple Pay, Google Pay) | Stripe account | 1% GembaPay + Stripe fees |
-| PayPal (Balance, Bank, Pay Later) | PayPal account | 1% GembaPay + PayPal fees |
-
-**Key Benefits**
-
-- Unified checkout for all payment methods
-- 51+ fiat currencies supported
-- Real-time exchange rates for multi-currency pricing
-- Instant settlement
-- Secure hosted payment page
+- One checkout for cards (incl. Apple Pay, Google Pay, Link) via Stripe, and PayPal
+- Funds settle directly into the merchant's own Stripe / PayPal account
+- **Refunds from the WooCommerce order screen** — full and partial
+- Refunds made in the GembaPay dashboard or directly in Stripe / PayPal are added to the order
+- Expired payment requests cancel the unpaid order; declined attempts add a note
+- Disputes put the order on hold and restore it when the dispute is won
+- The order shows **how the customer paid** (Card, Apple Pay, Google Pay, Link, PayPal)
+- Amount check: a payment that does not match the order total / currency puts the order on hold
+- Webhooks verified with the timestamped **Signature-V2** (replay protection)
+- HPOS (custom order tables) compatible
 
 ---
 
 ## Installation
 
-### Method 1: WordPress Admin
+**WordPress admin:** Plugins → Add New → search "Ivanov Payment Gateway with GembaPay" → Install → Activate.
 
-1. Download the plugin zip file
-2. Navigate to WordPress Admin → Plugins → Add New
-3. Click "Upload Plugin"
-4. Select the zip file and click "Install Now"
-5. Click "Activate Plugin"
+**ZIP:** Plugins → Add New → Upload Plugin → choose the ZIP → Install → Activate.
 
-### Method 2: FTP/SSH
+**WP-CLI:**
 
 ```bash
-# Upload to plugins directory
-cd /var/www/html/your-site/wp-content/plugins/
-unzip gembapay-woocommerce.zip
-```
-
-### Method 3: WP-CLI
-
-```bash
-wp plugin install /path/to/gembapay-woocommerce.zip --activate
-```
-
-### Verification
-
-```bash
-wp plugin list | grep gembapay
-# Expected: gembapay-woocommerce    active    none    1.1.0
+wp plugin install ivanov-payment-gateway-with-gembapay --activate
+wp plugin list | grep ivanov-payment-gateway-with-gembapay   # … active … 1.3.0
 ```
 
 ---
 
 ## Configuration
 
-### Step 1: Access Plugin Settings
+WooCommerce → Settings → Payments → **GembaPay**:
 
-Navigate to: **WooCommerce → Settings → Payments → GembaPay**
+| Setting | What to enter |
+|---------|---------------|
+| Enable/Disable | On |
+| Title / Description | Shown to customers at checkout |
+| API Key | `gembapay_live_…` (or `gembapay_test_…` for testing) from GembaPay dashboard → API Keys |
+| Webhook Secret | From GembaPay dashboard → Settings → Webhook Settings |
+| Webhook URL | Shown on this page — copy it into the GembaPay dashboard |
+| Debug Log | Logs to WooCommerce → Status → Logs (source `gembapay`) |
 
-### Step 2: Configure Settings
+In the **GembaPay dashboard**:
 
-| Setting | Description | Example |
-|---------|-------------|---------|
-| Enable/Disable | Activate the payment gateway | Checked |
-| Title | Payment method name at checkout | Pay with Card or PayPal |
-| Description | Customer-facing description | Secure payment by card or PayPal |
-| API URL | GembaPay API endpoint | https://api.gembapay.com |
-| API Key | Your merchant API key | gembapay_live_xxxx... |
-| Webhook Secret | Secret for signature verification | your_webhook_secret |
-
-### Step 3: Obtain API Key
-
-1. Login to Merchant Dashboard: https://merchant-dashboard.gembapay.com
-2. Navigate to Settings → API Keys
-3. Click "Create New Key"
-4. Copy the key (shown only once)
-5. Paste in plugin settings
-
-### Step 4: Connect Payment Providers
-
-In the GembaPay Merchant Dashboard:
-
-2. **Stripe:** Complete Stripe Connect onboarding
-3. **PayPal:** Complete PayPal Commerce Platform onboarding
+1. **Settings → Webhook Settings:** paste the Webhook URL from the plugin page, save, copy the secret
+   into the plugin.
+2. **Webhooks:** switch on `payment.refunded`, `payment.expired`, `dispute.created`, `dispute.closed`
+   (`payment.completed` is always on; `payment.failed` is optional — it only adds a note).
+3. **API Keys → Permissions:** give the key **`refunds:write`** if you want to refund from WooCommerce.
 
 ---
 
-## Payment Flow
+## Webhooks
 
-### Customer Experience
+The Webhook URL is generated by WooCommerce for your permalink setting:
 
-```
-1. WooCommerce Checkout
-   └─► Customer fills shipping/billing info
-   └─► Selects "Pay with Card or PayPal"
-   └─► Clicks "Place Order"
+| Permalinks | Webhook URL |
+|------------|-------------|
+| Pretty (e.g. "Post name") | `https://your-store.com/wc-api/gembapay_webhook/` |
+| Plain | `https://your-store.com/?wc-api=gembapay_webhook` |
 
-2. Redirect to GembaPay
-   └─► Secure hosted payment page
-   └─► Customer chooses payment method
+Always copy the URL shown on the plugin settings page.
 
-3. Payment Processing
-   ├─► Stripe: Enter card details, confirm
-   ├─► PayPal: Login and approve
+**Verification.** The plugin verifies `X-GembaPay-Signature-V2` (HMAC-SHA256 over `"<t>.<raw body>"`,
+timestamp within 5 minutes, two signatures accepted during a secret rotation). Only when a request has
+no V2 header does it fall back to the legacy `X-GembaPay-Signature`. Invalid, altered or replayed
+webhooks are answered **401** and change nothing. Details: [webhooks.md](webhooks.md).
 
-4. Confirmation
-   └─► Webhook sent to WooCommerce
-   └─► Order status → "Processing"
-   └─► Customer redirected to thank you page
-```
-
-### Technical Flow
-
-```
-WooCommerce ──► GembaPay API ──► Payment Page
-                    │
-      ┌─────────────┼─────────────┐
-      │             │             │
-      ▼             ▼             ▼
-   Stripe            PayPal
-      │             │             │
-      └─────────────┼─────────────┘
-                    │
-                    ▼
-              Webhook Handler
-                    │
-                    ▼
-              Order Updated
-```
+**Answers to GembaPay.** `200` once handled (also for duplicates, dashboard test events, subscription
+events and orders that are not from this shop — so GembaPay does not keep retrying them); `404` only
+when a `WC-…` order is not found (GembaPay retries); `401` for a bad signature.
 
 ---
 
-## Webhook Setup
+## What happens to the order
 
-### Webhook URL
+| Event | Order |
+|-------|-------|
+| `payment.completed` | Paid → **Processing** (or Completed for orders without shippable items). Transaction ID, reference and payment method saved; note "GembaPay payment completed via Google Pay: 49.90 EUR …". If the amount or currency does not match the order → **On hold** with a note instead. |
+| `payment.refunded` | A WooCommerce refund record is created (unless the refund was made from this shop), plus a note. A full refund → **Refunded**. |
+| `payment.failed` | Note only — the customer can still pay until the request expires. |
+| `payment.expired` | Unpaid order → **Cancelled**. A paid order is never touched. |
+| `dispute.created` | Processing / Completed order → **On hold** with a note; reply in your Stripe / PayPal account. |
+| `dispute.closed` | Won → previous status restored. Lost → note (the money went back to the customer). |
 
-Register this URL in your GembaPay Merchant Dashboard:
-
-```
-https://your-store.com/wp-json/gembapay/v1/webhook
-```
-
-### Webhook Payload
-
-**Stripe Payment:**
-```json
-{
-  "event": "payment.completed",
-  "payment": {
-    "id": "uuid",
-    "orderId": "WC-101-def456",
-    "reference": "pi_...",
-    "usdAmount": 108.70,
-    "network": "stripe"
-  },
-  "timestamp": "2026-01-22T12:00:00.000Z"
-}
-```
-
-**PayPal Payment:**
-```json
-{
-  "event": "payment.completed",
-  "payment": {
-    "id": "uuid",
-    "orderId": "WC-102-ghi789",
-    "reference": "5GP...",
-    "usdAmount": 108.70,
-    "network": "paypal"
-  },
-  "timestamp": "2026-01-22T12:00:00.000Z"
-}
-```
-
-### Signature Verification
-
-The plugin verifies webhook signatures using HMAC-SHA256 as **bare hex** (no `sha256=` prefix),
-computed over the **raw request body** — matching GembaPay's signing exactly:
-
-```php
-$rawBody  = $request->get_body();                            // raw bytes, not a re-encode
-$expected = hash_hmac('sha256', $rawBody, $webhook_secret);  // bare hex
-if (!hash_equals($expected, (string) $signature)) {
-    return new WP_REST_Response(['error' => 'Invalid signature'], 401);
-}
-```
+Each event is processed once per order (by `eventId`).
 
 ---
 
-## Order Management
+## Refunds
 
-### Order Metadata
+Use the standard **Refund** button on the order (full or partial amount). The plugin calls
+`POST /api/v1/refunds` with an `Idempotency-Key`, so a retried request cannot refund twice. The money
+goes back to the customer's card / PayPal; the order gets a note with the GembaPay refund ID.
 
-| Meta Key | Description |
-|----------|-------------|
-| _gembapay_order_id | GembaPay order identifier |
-| _gembapay_reference | Provider payment reference |
-| _gembapay_network | Payment provider (stripe/paypal) |
-| _gembapay_payment_provider | Provider type (stripe/paypal) |
-| _gembapay_amount | USD amount |
+If the API key lacks `refunds:write`, WooCommerce shows: *"Refund not allowed: give your GembaPay API
+key the "refunds:write" permission …"* — add it in GembaPay dashboard → API Keys → Permissions.
 
-### Order Status Mapping
+Refunds made outside WooCommerce (GembaPay dashboard, Stripe Dashboard, PayPal) arrive as
+`payment.refunded` and are recorded on the order automatically.
 
-| GembaPay Event | WooCommerce Status |
-|----------------|-------------------|
-| Payment Created | Pending Payment |
-| payment.completed | Processing |
-| payment.failed | Failed |
+---
 
-### Admin Order View
+## Order data
 
-Payment details are displayed in the order admin page with:
-- Provider type (Stripe/PayPal)
-- Network/Method used
-- USD amount
+| Meta key | Content |
+|----------|---------|
+| `_gembapay_order_id` | GembaPay order ID of the latest payment attempt (`WC-<order>-<time>`) |
+| `_gembapay_order_ids` | All GembaPay order IDs the order had |
+| `_gembapay_reference` | Provider payment ID (Stripe `pi_…` / PayPal capture ID); also the WooCommerce transaction ID |
+| `_gembapay_payment_method` | `card`, `apple_pay`, `google_pay`, `link` (empty for PayPal) |
+| `_gembapay_provider` / `_gembapay_network` | `stripe` / `paypal` |
+| `_gembapay_refund_ids` | GembaPay refund IDs already recorded |
+| `_gembapay_dispute_id` | Last dispute ID |
+| `_gembapay_event_ids` | Last processed webhook event IDs |
+
+The thank-you page and the order emails show "Paid with: Google Pay" and the reference.
 
 ---
 
 ## Troubleshooting
 
-### Common Issues
+| Problem | Check |
+|---------|-------|
+| Order stays "Pending payment" after paying | Is the Webhook URL in the GembaPay dashboard exactly the one on the plugin page? GembaPay dashboard → Webhooks → Delivery log shows each attempt and your shop's answer. |
+| Delivery log shows 401 | Webhook Secret in the plugin ≠ the one in GembaPay; or the server clock is more than 5 minutes off (use NTP). |
+| Delivery log shows 404 | The order was deleted, or the URL points to another site. |
+| Refunds/disputes do not appear on orders | Switch those events on in GembaPay dashboard → Webhooks. |
+| Refund button error about `refunds:write` | Add the permission to the API key. |
 
-| Issue | Cause | Solution |
-|-------|-------|----------|
-| "No API key" | API key not configured | Add API key in plugin settings |
-| 404 on webhook | REST API disabled | Flush permalinks (Settings → Permalinks → Save) |
-| Order not updating | Webhook not received | Verify webhook URL in GembaPay dashboard |
-| "Invalid signature" | Wrong webhook secret | Ensure secret matches in both places |
-| Payment method missing | Provider not connected | Connect provider in GembaPay Dashboard |
-
-### Debug Mode
-
-Enable WordPress debug logging:
-
-```php
-// wp-config.php
-define('WP_DEBUG', true);
-define('WP_DEBUG_LOG', true);
-```
-
-View logs:
-
-```bash
-tail -f /var/www/html/wp-content/debug.log | grep GembaPay
-```
-
-### Verify Plugin Status
-
-```bash
-# Check if plugin is active
-wp plugin list | grep gembapay
-
-# Check webhook endpoint
-curl -I https://your-store.com/wp-json/gembapay/v1/webhook
-# Should return 200 or 401 (not 404)
-```
-
----
-
-## Customization
-
-### Modify Payment Method Title
-
-```php
-add_filter('woocommerce_gateway_title', function($title, $gateway_id) {
-    if ($gateway_id === 'gembapay') {
-        return 'Card or PayPal';
-    }
-    return $title;
-}, 10, 2);
-```
-
-### Custom Order Note
-
-```php
-add_action('gembapay_payment_completed', function($order, $payment_data) {
-    $network = $payment_data['network'] ?? 'unknown';
-    $order->add_order_note(
-        sprintf('Payment received via %s', ucfirst($network))
-    );
-}, 10, 2);
-```
-
----
-
-## Support
-
-- Documentation: https://gembapay.com/docs
-- Contact: https://gembapay.com/contact
+Enable **Debug Log** to see every webhook (event and ID) in WooCommerce → Status → Logs.
 
 ---
 
 ## Related Documentation
 
+- [Webhooks](webhooks.md) — every event, payload and signature
+- [API Reference](api-reference.md) — refunds and payment links API
 - [Integration Guide](integration.md)
-- [API Reference](api-reference.md)
-- [Webhooks](webhooks.md)

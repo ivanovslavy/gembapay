@@ -462,7 +462,7 @@ set:
 
 ### Subscription events
 
-Recurring billing runs on the subscription engines of Stripe and PayPal. Subscription events have
+Card subscriptions are billed by Stripe Billing, PayPal subscriptions by GembaPay's own engine. Subscription events have
 their **own flat payload** — no `payment` wrapper and **no `orderId`**:
 
 ```json
@@ -487,11 +487,12 @@ their **own flat payload** — no `payment` wrapper and **no `orderId`**:
 |-------|------|--------|
 | `subscription.activated` | The subscription became active | Grant access. |
 | `subscription.payment` | A cycle was paid (`amount`, `currency`, `paymentMethod`) | Extend access by one period, once per `eventId`. |
-| `subscription.payment_failed` | A cycle charge failed; the provider retries | Warn the customer; keep access during the provider's retry window. |
+| `subscription.payment_failed` | A cycle charge failed and will be retried (Stripe's retries; PayPal after 1, 3 and 5 days) | Warn the customer; keep access during the retry window. |
 | `subscription.canceled` | The subscription ended | Remove access at the end of the paid period. |
 
 `paymentMethod` on `subscription.payment` is `card` / `apple_pay` / `google_pay` / `link`, or `null`
-for PayPal. Subscription events use `isTestMode` (not `testMode`).
+for PayPal. For PayPal, `eventId` is PayPal's capture id and `providerSubscriptionId` the id of the
+saved PayPal. Subscription events use `isTestMode` (not `testMode`).
 
 ---
 

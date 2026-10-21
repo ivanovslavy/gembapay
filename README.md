@@ -47,7 +47,7 @@ account**. Gemba EOOD never holds, controls, or has access to merchant or custom
 
 - Stripe — credit and debit cards, Apple Pay, Google Pay
 - PayPal — PayPal balance, linked bank, Pay Later
-- Recurring subscriptions — auto-billing via the native Stripe and PayPal subscription engines
+- Recurring subscriptions — cards billed by Stripe Billing, PayPal billed by GembaPay from the customer's saved PayPal; the platform fee is taken at source on every cycle
 
 **Merchant Tools**
 
@@ -147,9 +147,10 @@ Create a shareable payment link with a QR code from the dashboard — no website
 Merchants create subscription plans programmatically via the API using their merchant key. Each
 plan gets a hosted subscribe link and an embeddable button.
 
-Recurring billing is powered by the **native subscription engines of Stripe and PayPal**, which
-auto-charge each cycle and handle retries and dunning for failed payments. GembaPay charges 1% per
-billing cycle. Customers can cancel at any time from the merchant's self-service Manage page using
+Card subscriptions are billed by **Stripe Billing**. PayPal subscriptions are billed by **GembaPay's own
+engine**, which charges the customer's PayPal saved with the merchant at sign-up — retries after 1, 3
+and 5 days, cancellation at the end of the paid period, never two charges for one cycle. GembaPay charges
+1% per billing cycle, taken at source by Stripe or PayPal. Customers can cancel at any time from the merchant's self-service Manage page using
 a 6-digit email code; cancellation is cancel-at-period-end.
 
 ---

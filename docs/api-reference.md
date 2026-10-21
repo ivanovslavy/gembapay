@@ -274,7 +274,7 @@ The customer is then taken to `https://payment.gembapay.com{checkoutPath}` and c
 
 ## Subscriptions
 
-Subscriptions let a merchant bill customers automatically on a recurring schedule. A merchant creates **plans** (price, billing interval, accepted methods) — via this API or on the **Subscriptions** page of the merchant dashboard (plans, subscribers, recurring revenue, cancel); each plan exposes a hosted subscribe link and an embeddable button. Recurring charges are executed by the **native subscription engines of Stripe and PayPal**.
+Subscriptions let a merchant bill customers automatically on a recurring schedule. A merchant creates **plans** (price, billing interval, accepted methods) — via this API or on the **Subscriptions** page of the merchant dashboard (plans, subscribers, recurring revenue, cancel); each plan exposes a hosted subscribe link and an embeddable button. Recurring charges are executed by **Stripe Billing** (card) and by **GembaPay's own billing engine** on the customer's saved PayPal (PayPal), with the platform fee taken at source on every cycle.
 
 Plan management endpoints require **merchant authentication** — an **API key** (for programmatic provisioning, recommended) or a dashboard JWT. The subscribe and manage flows used by the hosted pages are **public** (no authentication). Each successful billing cycle is recorded in the merchant's transactions and triggers the merchant's `subscription.payment` webhook — subscriptions use dedicated `subscription.*` events with a flat payload (no `orderId`), not `payment.completed` (see [Webhooks](webhooks.md#subscription-events)).
 
@@ -508,11 +508,11 @@ Server-to-server subscribe for one of your **own** plans — for platforms that 
 
 **Response:** same as [Public: Subscribe](#public-subscribe) — a `url` to redirect the customer to.
 
-> **First-charge discounts are Stripe-only (platform-wide).** They use Stripe's one-time coupon (`duration: once`), applied per subscriber to the first invoice. PayPal has no equivalent — its only way to discount a first cycle is a plan-level `TRIAL` billing cycle baked into the plan, which cannot be applied per subscriber. So if a merchant wants to offer a first-charge discount, the customer must subscribe via **Stripe**; a `paypal` subscribe carrying a discount is rejected with `400` (never silently charged full price).
+> **First-charge discounts are Stripe-only (platform-wide).** They use Stripe's one-time coupon (`duration: once`), applied per subscriber to the first invoice. If a merchant wants to offer a first-charge discount, the customer must subscribe via **Stripe**; a `paypal` subscribe carrying a discount is rejected with `400` (never silently charged full price).
 
 ### Merchant: Re-price a plan
 
-Change a subscription plan's recurring price. Stripe Prices are immutable, so this creates a **new** Stripe Price on the plan's product, points the plan at it, and **migrates every active subscription** to the new price with **no proration** — the new price takes effect at each subscriber's next renewal. Enforces plan ownership. (PayPal subscriptions are not re-priced.)
+Change a subscription plan's recurring price. Stripe Prices are immutable, so this creates a **new** Stripe Price on the plan's product, points the plan at it, and **migrates every active subscription** to the new price with **no proration** — the new price takes effect at each subscriber's next renewal. Enforces plan ownership. PayPal subscriptions billed by GembaPay are charged the plan's current price each cycle, so they also move to the new price at their next renewal. The plan needs a Stripe product (it accepts Stripe). Tell your subscribers about a price change before it applies.
 
 **Endpoint:** `POST /api/subscriptions/plan/:token/reprice`
 

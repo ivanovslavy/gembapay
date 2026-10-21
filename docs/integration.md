@@ -118,7 +118,12 @@ Developers who want to read a link's details or start checkout programmatically 
 
 Charge your customers automatically on a recurring schedule — for memberships, SaaS plans, or any service billed per period. You create plans **programmatically via the GembaPay API**, then share a hosted subscribe link or paste an embeddable button on your own website.
 
-Recurring billing is handled by the **native subscription engines of Stripe and PayPal**, which automatically charge each cycle and manage retries and dunning for failed payments. **Recurring billing runs entirely on the providers**, because the provider stores the mandate and pulls each charge without further authorization for each individual charge.
+Each cycle is charged automatically, without the customer approving each charge:
+
+- **Card (Stripe)** — Stripe's own subscription engine (**Stripe Billing**) stores the mandate, charges each cycle and retries failed payments.
+- **PayPal** — **GembaPay's billing engine** charges the customer's PayPal, which the customer saved **with you (on your PayPal account)** when subscribing. A trial saves the PayPal without charging; the first charge is at the end of the trial. A failed cycle is retried after **1, 3 and 5 days**; after that the subscription is canceled and the saved PayPal removed. Every cycle is locked before it is charged, so it is never charged twice.
+
+The platform fee is taken at source on every cycle — Stripe's application fee, PayPal's platform fee — exactly as on a one-time payment. PayPal is offered on a plan only once you have connected PayPal with the permission to save payment methods (the dashboard asks you to reconnect otherwise).
 
 ### Create a Plan
 
@@ -133,7 +138,7 @@ Pass an `externalRef` to make creation **idempotent** — re-running your provis
 
 On the subscribe page the customer enters their email, chooses a method, and pays the first cycle. The auto-recurring subscription then begins immediately.
 
-> **First-charge discounts are Stripe-only.** If you start a subscription with a first-charge discount, the customer must pay via **Stripe** — PayPal cannot apply a per-subscription discount (its only discount path is a plan-level trial cycle, which is not per-subscriber), so a PayPal subscribe carrying a discount is rejected rather than silently charged full price.
+> **First-charge discounts are Stripe-only.** If you start a subscription with a first-charge discount, the customer must pay via **Stripe**; a PayPal subscribe carrying a discount is rejected rather than silently charged full price.
 
 ### Subscription Lifecycle
 
@@ -144,12 +149,10 @@ Customer clicks subscribe link / button
 Enters email, pays first cycle (Stripe or PayPal)
         │
         ▼
-Subscription ACTIVE — provider auto-charges each cycle
+Subscription ACTIVE — charged each cycle (Stripe Billing / GembaPay for PayPal)
         │
         ├──► each paid cycle  → recorded in Transactions + subscription.payment webhook
-        │
-        ├──► upgrade  → effective immediately (proration / catch-up charge)
-        ├──► downgrade → effective at next renewal (no refund)
+        ├──► failed cycle     → subscription.payment_failed, retried (PayPal: after 1, 3, 5 days)
         │
         ▼
 Customer cancels via Manage page (cancel-at-period-end)
@@ -158,10 +161,9 @@ Customer cancels via Manage page (cancel-at-period-end)
 Active until end of paid period, then STOPS
 ```
 
-### Upgrades and Downgrades
+### Changing Plans
 
-- **Upgrade** (to a higher-priced plan), mid-cycle: with **Stripe**, the prorated difference for the remainder of the current cycle is charged immediately, and the full new price applies at the next renewal. With **PayPal**, the existing subscription is cancelled and replaced by the new plan, with a catch-up charge.
-- **Downgrade** (to a lower-priced plan): takes effect at the **next renewal**. No refund is issued for the current, already-paid period.
+In-place upgrades and downgrades are **not offered yet**. To move to another plan, the customer cancels the current subscription (it stays active until the end of the paid period) and subscribes to the new plan. To change the price of a plan for everyone on it, use [Re-price a plan](api-reference.md#merchant-re-price-a-plan) — the new price applies from each subscriber's next renewal.
 
 ### How Customers Cancel
 

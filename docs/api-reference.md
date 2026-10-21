@@ -92,6 +92,10 @@ Creates a new payment request for a customer.
 |-------|------|----------|-------------|
 | amount | number | Yes | Payment amount in specified currency |
 | currency | string | No | ISO 4217 currency code (default: USD) |
+
+**Whole-unit currencies.** JPY, KRW, VND, CLP, PYG, ISK and UGX have no decimal places: send a whole
+amount (`1000`, not `1000.50`) — otherwise the request is refused with `400`. Card payments are not
+available in KWD, BHD, OMR, JOD, GHS and VES (the checkout then offers PayPal only, charged in EUR).
 | orderId | string | Yes | Unique order identifier from your system |
 | description | string | No | Payment description shown to customer |
 
@@ -306,6 +310,12 @@ Plan management endpoints require **merchant authentication** — an **API key**
 | description | string | No | Plan description shown on the subscribe page |
 | allowedMethods | string[] | Yes | Accepted methods: any of `stripe`, `paypal` |
 | trialDays | number | No | Free trial length in days |
+| externalRef | string | No | Your own plan ID; creating a plan again with the same `externalRef` returns the same plan (idempotent sync) |
+| isTestMode | boolean | No | **Dashboard only.** With an API key the key decides: a `gembapay_test_` key creates test plans, a `gembapay_live_` key live plans |
+
+**Test and live plans are separate.** An API key only lists, subscribes, re-prices and cancels plans of its
+own mode — a plan of the other mode answers `404`. An `externalRef` already used by a plan of the other mode
+answers `409`. Whole-unit currencies (JPY, KRW, …) need a whole `amount`.
 
 **Response:**
 ```json

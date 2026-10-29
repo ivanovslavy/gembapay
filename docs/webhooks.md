@@ -488,11 +488,16 @@ their **own flat payload** — no `payment` wrapper and **no `orderId`**:
 | Event | When | Handle |
 |-------|------|--------|
 | `subscription.activated` | The subscription became active | Grant access. |
-| `subscription.payment` | A cycle was paid (`amount`, `currency`, `paymentMethod`) | Extend access by one period, once per `eventId`. |
+| `subscription.payment` | A cycle was paid (`amount`, `currency`, `paymentMethod`, **`reason`**) | Extend access by one period, once per `eventId` — **unless `reason` is `plan_change`**, which is the prorated difference of an upgrade: money, but not a period. Treat `reason: 'cycle'` (or absent, for deliveries sent before 2026-10-29) as a renewal. |
 | `subscription.payment_failed` | A cycle charge failed and will be retried (Stripe's retries; PayPal after 1, 3 and 5 days) | Warn the customer; keep access during the retry window. |
 | `subscription.canceled` | The subscription ended | Remove access at the end of the paid period. |
 | `subscription.plan_changed` | The subscriber is on another plan from now (`fromPlanToken`, `toPlanToken`, `fromAmount`, `toAmount`, `prorated`, `effectiveAt`) | Change what they may use **at this moment**. A dearer plan arrives here only after the prorated difference was actually paid. |
 | `subscription.plan_change_scheduled` | A cheaper plan is parked for the renewal (`scheduled: true`, `effectiveAt`), or that was called off (`scheduled: false`) | Do **not** change their rights yet — they paid for the period they are in. Wait for `subscription.plan_changed`. |
+
+🔴 **`reason` on `subscription.payment`** is `plan_change` for the prorated difference charged when a
+subscriber moves to a dearer plan (both rails), and `cycle` for a renewal. A receiver that cannot tell
+them apart extends the customer's paid-through date by a whole period and bills them a full cycle for a
+part-period difference — so if you grant access or issue documents on this event, branch on it.
 
 `paymentMethod` on `subscription.payment` is `card` / `apple_pay` / `google_pay` / `link`, or `null`
 for PayPal. For PayPal, `eventId` is PayPal's capture id and `providerSubscriptionId` the id of the

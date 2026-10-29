@@ -460,6 +460,98 @@ Cancels a subscriber's subscription at period end (the provider stops billing at
 }
 ```
 
+### Change a Subscriber's Plan (Up/Downgrade)
+
+Moves one existing subscriber to another of your plans. This is not the same as
+[Re-price a Plan](#re-price-a-plan): that changes the price of a plan for *everybody* on it, while this
+moves *one* subscriber to a different plan.
+
+**Endpoint:** `POST /api/subscriptions/subscribers/:id/change-plan`
+
+**Authentication:** API key with the `subscriptions:change_plan` permission, or a dashboard JWT.
+**`Idempotency-Key` required** (header, or `idempotencyKey` in the body) — repeating a request returns
+the first response instead of charging a second time.
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `planToken` | yes | The plan to move them to. Must be **yours**, **active**, in the **same currency** and on the **same interval**, in the same mode, and at a different price. |
+| `idempotencyKey` | — | Alternative to the header. |
+
+**What happens depends on the direction, on both Stripe and PayPal:**
+
+- **A dearer plan takes effect at once**, and only if the money moves. The difference for the unused
+  part of the current period is charged immediately — on Stripe as a prorated invoice, on PayPal as one
+  order on the customer's saved PayPal. If that payment is refused the answer is `402` and **nothing
+  changes**: the subscriber stays on the plan they were on, at the price they were paying.
+- **A cheaper plan takes effect at the next renewal.** The customer has already paid for the period
+  they are in, so it is recorded as a *scheduled* change (`"scheduled": true`) and applied when the new
+  period starts. Until then it can be called off (below), and the dashboard shows it on the subscriber.
+- **During a trial** nothing is charged — there is no difference to collect — and the new price applies
+  from the first real charge.
+
+**Request:**
+```json
+{ "planToken": "a7f3…", "idempotencyKey": "b1b27f0c-…" }
+```
+
+**Response (dearer plan — applied now):**
+```json
+{
+  "id": "sub_7c1d…",
+  "applied": true,
+  "scheduled": false,
+  "effectiveAt": "2026-10-29T18:48:29.890Z",
+  "prorated": 15.00,
+  "proratedRef": "in_1UV…",
+  "fromPlanToken": "9c81…", "toPlanToken": "a7f3…",
+  "fromAmount": 10, "toAmount": 25, "currency": "EUR",
+  "plan": { "…": "the plan they are on now" }, "pendingPlan": null
+}
+```
+
+**Response (cheaper plan — waiting for the renewal):**
+```json
+{
+  "id": "sub_7c1d…",
+  "applied": false,
+  "scheduled": true,
+  "effectiveAt": "2026-11-29T18:48:26.000Z",
+  "prorated": null,
+  "plan": { "…": "still the plan they paid for" },
+  "pendingPlan": { "…": "the plan that takes over at the renewal" }
+}
+```
+
+**Errors**
+
+| Status | When |
+|--------|------|
+| `400` | Another currency, another interval, an archived plan, the plan they are already on, or a different plan at the same price. The message says which. |
+| `402` | The prorated difference was not paid (card declined, authentication needed, or the saved PayPal refused). **The plan was not changed.** |
+| `403 missing_scope` | The API key has no `subscriptions:change_plan`. |
+| `404` | Unknown subscriber, or a plan that is not yours (or is in the other mode). |
+| `409` | The subscription is past due (settle the cycle first), already ending at the period end, not active, or is an old PayPal-billed subscription that PayPal itself prices. |
+| `422` | The same `Idempotency-Key` with a different body. |
+
+**Call off a scheduled change**
+
+**Endpoint:** `POST /api/subscriptions/subscribers/:id/change-plan/cancel` — same authentication, same
+permission, `Idempotency-Key` required. Answers `404` when there is nothing waiting.
+
+**Webhooks:** `subscription.plan_changed` when it takes effect (with `fromAmount`, `toAmount`,
+`prorated`) and `subscription.plan_change_scheduled` when a cheaper plan is parked for the renewal
+(`scheduled: true`) or that waiting change is called off (`scheduled: false`). Both are listed in
+[Webhooks](webhooks.md#subscription-events); a merchant whose event list was saved before this existed
+switches them on in Dashboard → Webhooks.
+
+```bash
+curl -X POST https://api.gembapay.com/api/subscriptions/subscribers/$SUB_ID/change-plan \
+  -H "Authorization: Bearer $GEMBAPAY_API_KEY" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{"planToken":"'$PLAN_TOKEN'"}'
+```
+
 ### Public: Resolve a Plan
 
 Used by the hosted subscribe page to render plan details. No authentication.
@@ -981,6 +1073,7 @@ Base path `https://api.gembapay.com/api/v1`, authenticated with your **API key**
   |------------|--------|
   | `refunds:write` | `POST /api/v1/refunds` |
   | `payment_links:write` | `POST`, `PATCH`, `DELETE /api/v1/payment-links` |
+  | `subscriptions:change_plan` | `POST /api/subscriptions/subscribers/:id/change-plan` (and `…/change-plan/cancel`) |
 
   Keys created before October 2026 have no permissions until you add them. A missing permission
   answers `403` with `"code": "missing_scope"`.

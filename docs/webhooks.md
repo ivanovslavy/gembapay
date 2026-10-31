@@ -68,12 +68,14 @@ Every webhook is **signed**. Verify the signature before you trust the content �
 | `subscription.payment` | Subscriptions | on | A recurring cycle was paid. |
 | `subscription.payment_failed` | Subscriptions | on | A recurring cycle failed (the provider retries). |
 | `subscription.canceled` | Subscriptions | on | A subscription was canceled. |
-| `subscription.plan_changed` | Subscriptions | on | A subscriber moved to another plan (it has taken effect). |
-| `subscription.plan_change_scheduled` | Subscriptions | on | A cheaper plan is waiting for the renewal (`scheduled: true`), or a waiting change was called off (`scheduled: false`). |
+| `subscription.plan_changed` | Subscriptions | off | A subscriber moved to another plan (it has taken effect). |
+| `subscription.plan_change_scheduled` | Subscriptions | off | A cheaper plan is waiting for the renewal (`scheduled: true`), or a waiting change was called off (`scheduled: false`). |
+| `webhook.test` | — | **always on** | Sent by the "send test" button in the dashboard. Not subscribable: it cannot be switched off. |
 
-The events that existed before October 2026 are on by default, so integrations that predate this
-page see no change. New events stay off until you switch them on. `payment.completed` cannot be
-switched off.
+The five events that existed before 2026-10-21 are on by default, so integrations that predate this
+page see no change. Every event added since — the plan-change pair included — stays off until you
+switch it on in the dashboard (Webhooks), for new and existing merchants alike.
+`payment.completed` cannot be switched off, and `webhook.test` is always delivered.
 
 ---
 
